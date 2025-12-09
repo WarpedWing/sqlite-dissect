@@ -47,25 +47,20 @@ DatabaseHeader(SQLiteHeader)
 
 class DatabaseHeader(SQLiteHeader):
     def __init__(self, database_header_byte_array):
-
         super().__init__()
 
         logger = getLogger(LOGGER_NAME)
 
         if len(database_header_byte_array) != SQLITE_DATABASE_HEADER_LENGTH:
             log_message = "The database header byte array of size: {} is not the expected size of: {}."
-            log_message = log_message.format(
-                len(database_header_byte_array), SQLITE_DATABASE_HEADER_LENGTH
-            )
+            log_message = log_message.format(len(database_header_byte_array), SQLITE_DATABASE_HEADER_LENGTH)
             logger.error(log_message)
             raise ValueError(log_message)
 
         try:
-
             self.magic_header_string = database_header_byte_array[0:16]
 
         except error:
-
             logger.error("Failed to retrieve the magic header.")
             raise
 
@@ -75,37 +70,29 @@ class DatabaseHeader(SQLiteHeader):
             raise HeaderParsingError(log_message)
 
         try:
-
             self.page_size = unpack(b">H", database_header_byte_array[16:18])[0]
 
         except error:
-
             logger.error("Failed to retrieve the page size.")
             raise
 
         if self.page_size == MAXIMUM_PAGE_SIZE_INDICATOR:
             self.page_size = MAXIMUM_PAGE_SIZE
         elif self.page_size < MINIMUM_PAGE_SIZE_LIMIT:
-            log_message = (
-                "The page size: {} is less than the minimum page size limit: {}."
-            )
+            log_message = "The page size: {} is less than the minimum page size limit: {}."
             log_message = log_message.format(self.page_size, MINIMUM_PAGE_SIZE_LIMIT)
             logger.error(log_message)
             raise HeaderParsingError(log_message)
         elif self.page_size > MAXIMUM_PAGE_SIZE_LIMIT:
-            log_message = (
-                "The page size: {} is greater than the maximum page size limit: {}."
-            )
+            log_message = "The page size: {} is greater than the maximum page size limit: {}."
             log_message = log_message.format(self.page_size, MAXIMUM_PAGE_SIZE_LIMIT)
             logger.error(log_message)
             raise HeaderParsingError(log_message)
 
         try:
-
             self.file_format_write_version = ord(database_header_byte_array[18:19])
 
         except TypeError:
-
             logger.error("Failed to retrieve the file format write version.")
             raise
 
@@ -118,11 +105,9 @@ class DatabaseHeader(SQLiteHeader):
             raise HeaderParsingError(log_message)
 
         try:
-
             self.file_format_read_version = ord(database_header_byte_array[19:20])
 
         except TypeError:
-
             logger.error("Failed to retrieve the file format read version.")
             raise
 
@@ -135,30 +120,25 @@ class DatabaseHeader(SQLiteHeader):
             raise HeaderParsingError(log_message)
 
         try:
-
             self.reserved_bytes_per_page = ord(database_header_byte_array[20:21])
 
         except TypeError:
-
             logger.error("Failed to retrieve the reserved bytes per page.")
             raise
 
         if self.reserved_bytes_per_page != 0:
             log_message = (
-                "Reserved bytes per page is not 0 but {} and is not implemented."
+                "Reserved bytes per page is not 0 but {}. This may indicate encryption "
+                "or a custom extension. Attempting to parse anyway - results may be incomplete."
             )
             log_message = log_message.format(self.reserved_bytes_per_page)
-            logger.error(log_message)
-            raise NotImplementedError(log_message)
+            logger.warning(log_message)
+            warn(log_message, RuntimeWarning)
 
         try:
-
-            self.maximum_embedded_payload_fraction = ord(
-                database_header_byte_array[21:22]
-            )
+            self.maximum_embedded_payload_fraction = ord(database_header_byte_array[21:22])
 
         except TypeError:
-
             logger.error("Failed to retrieve the maximum embedded payload fraction.")
             raise
 
@@ -172,13 +152,9 @@ class DatabaseHeader(SQLiteHeader):
             raise HeaderParsingError(log_message)
 
         try:
-
-            self.minimum_embedded_payload_fraction = ord(
-                database_header_byte_array[22:23]
-            )
+            self.minimum_embedded_payload_fraction = ord(database_header_byte_array[22:23])
 
         except TypeError:
-
             logger.error("Failed to retrieve the minimum embedded payload fraction.")
             raise
 
@@ -192,48 +168,29 @@ class DatabaseHeader(SQLiteHeader):
             raise HeaderParsingError(log_message)
 
         try:
-
             self.leaf_payload_fraction = ord(database_header_byte_array[23:24])
 
         except TypeError:
-
             logger.error("Failed to retrieve the leaf payload fraction.")
             raise
 
         if self.leaf_payload_fraction != LEAF_PAYLOAD_FRACTION:
-            log_message = (
-                "Leaf payload fraction: {} is not expected the expected value of: {}."
-            )
-            log_message = log_message.format(
-                self.leaf_payload_fraction, LEAF_PAYLOAD_FRACTION
-            )
+            log_message = "Leaf payload fraction: {} is not expected the expected value of: {}."
+            log_message = log_message.format(self.leaf_payload_fraction, LEAF_PAYLOAD_FRACTION)
             logger.error(log_message)
             raise HeaderParsingError(log_message)
 
         self.file_change_counter = unpack(b">I", database_header_byte_array[24:28])[0]
-        self.database_size_in_pages = unpack(b">I", database_header_byte_array[28:32])[
-            0
-        ]
-        self.first_freelist_trunk_page_number = unpack(
-            b">I", database_header_byte_array[32:36]
-        )[0]
-        self.number_of_freelist_pages = unpack(
-            b">I", database_header_byte_array[36:40]
-        )[0]
+        self.database_size_in_pages = unpack(b">I", database_header_byte_array[28:32])[0]
+        self.first_freelist_trunk_page_number = unpack(b">I", database_header_byte_array[32:36])[0]
+        self.number_of_freelist_pages = unpack(b">I", database_header_byte_array[36:40])[0]
         self.schema_cookie = unpack(b">I", database_header_byte_array[40:44])[0]
         self.schema_format_number = unpack(b">I", database_header_byte_array[44:48])[0]
-        self.default_page_cache_size = unpack(b">I", database_header_byte_array[48:52])[
-            0
-        ]
-        self.largest_root_b_tree_page_number = unpack(
-            b">I", database_header_byte_array[52:56]
-        )[0]
-        self.database_text_encoding = unpack(b">I", database_header_byte_array[56:60])[
-            0
-        ]
+        self.default_page_cache_size = unpack(b">I", database_header_byte_array[48:52])[0]
+        self.largest_root_b_tree_page_number = unpack(b">I", database_header_byte_array[52:56])[0]
+        self.database_text_encoding = unpack(b">I", database_header_byte_array[56:60])[0]
 
         if self.schema_format_number == 0 and self.database_text_encoding == 0:
-
             """
 
             Note:  If the schema format number and database text encoding are both 0 then no schema or data has been
@@ -254,7 +211,6 @@ class DatabaseHeader(SQLiteHeader):
             warn(log_message, RuntimeWarning)
 
         else:
-
             if self.schema_format_number not in VALID_SCHEMA_FORMATS:
                 log_message = f"Schema format number: {self.schema_format_number} not a valid schema format."
                 logger.error(log_message)
@@ -266,9 +222,7 @@ class DatabaseHeader(SQLiteHeader):
                 raise HeaderParsingError(log_message)
 
         self.user_version = unpack(b">I", database_header_byte_array[60:64])[0]
-        self.incremental_vacuum_mode = unpack(b">I", database_header_byte_array[64:68])[
-            0
-        ]
+        self.incremental_vacuum_mode = unpack(b">I", database_header_byte_array[64:68])[0]
 
         """
 
@@ -309,12 +263,8 @@ class DatabaseHeader(SQLiteHeader):
             logger.error(log_message)
             raise HeaderParsingError(log_message)
 
-        self.version_valid_for_number = unpack(
-            b">I", database_header_byte_array[92:96]
-        )[0]
-        self.sqlite_version_number = unpack(b">I", database_header_byte_array[96:100])[
-            0
-        ]
+        self.version_valid_for_number = unpack(b">I", database_header_byte_array[92:96])[0]
+        self.sqlite_version_number = unpack(b">I", database_header_byte_array[96:100])[0]
 
         self.md5_hex_digest = get_md5_hash(database_header_byte_array)
 
@@ -398,11 +348,9 @@ class DatabaseHeader(SQLiteHeader):
 
 
 class BTreePageHeader:
-
     __metaclass__ = ABCMeta
 
     def __init__(self, page, header_length):
-
         self.offset = 0
         self.header_length = header_length
 
@@ -419,24 +367,14 @@ class BTreePageHeader:
         first_page_byte = page[0:1]
         if first_page_byte == MASTER_PAGE_HEX_ID:
             self.contains_sqlite_database_header = True
-            self.root_page_only_md5_hex_digest = get_md5_hash(
-                page[SQLITE_DATABASE_HEADER_LENGTH:]
-            )
+            self.root_page_only_md5_hex_digest = get_md5_hash(page[SQLITE_DATABASE_HEADER_LENGTH:])
             self.offset += SQLITE_DATABASE_HEADER_LENGTH
 
         self.page_type = page[self.offset : self.offset + 1]
-        self.first_freeblock_offset = unpack(
-            b">H", page[self.offset + 1 : self.offset + 3]
-        )[0]
-        self.number_of_cells_on_page = unpack(
-            b">H", page[self.offset + 3 : self.offset + 5]
-        )[0]
-        self.cell_content_offset = unpack(
-            b">H", page[self.offset + 5 : self.offset + 7]
-        )[0]
-        self.number_of_fragmented_free_bytes = ord(
-            page[self.offset + 7 : self.offset + 8]
-        )
+        self.first_freeblock_offset = unpack(b">H", page[self.offset + 1 : self.offset + 3])[0]
+        self.number_of_cells_on_page = unpack(b">H", page[self.offset + 3 : self.offset + 5])[0]
+        self.cell_content_offset = unpack(b">H", page[self.offset + 5 : self.offset + 7])[0]
+        self.number_of_fragmented_free_bytes = ord(page[self.offset + 7 : self.offset + 8])
 
         self.md5_hex_digest = get_md5_hash(page[self.offset : self.header_length])
 
@@ -493,12 +431,8 @@ class InteriorPageHeader(BTreePageHeader):
         super().__init__(page, INTERIOR_PAGE_HEADER_LENGTH)
 
         right_most_pointer_start_offset = self.offset + RIGHT_MOST_POINTER_OFFSET
-        right_most_pointer_end_offset = (
-            right_most_pointer_start_offset + RIGHT_MOST_POINTER_LENGTH
-        )
-        self.right_most_pointer = unpack(
-            b">I", page[right_most_pointer_start_offset:right_most_pointer_end_offset]
-        )[0]
+        right_most_pointer_end_offset = right_most_pointer_start_offset + RIGHT_MOST_POINTER_LENGTH
+        self.right_most_pointer = unpack(b">I", page[right_most_pointer_start_offset:right_most_pointer_end_offset])[0]
 
     def stringify(self, padding=""):
         string = "\n" + padding + "Right Most Pointer: {}"

@@ -128,12 +128,8 @@ varint_length_min_max_params = [
 ]
 
 
-@pytest.mark.parametrize(
-    "type_list, expected_min, expected_max", varint_length_min_max_params
-)
-def test_calculate_serial_type_varint_length_min_max(
-    type_list, expected_min, expected_max
-):
+@pytest.mark.parametrize("type_list, expected_min, expected_max", varint_length_min_max_params)
+def test_calculate_serial_type_varint_length_min_max(type_list, expected_min, expected_max):
     assert calculate_serial_type_varint_length_min_max(type_list) == (
         expected_min,
         expected_max,
@@ -148,30 +144,28 @@ generate_signature_regex_params = [
     (
         [[-1, -2]],
         False,
-        b"(?:(?:[\x0D-\x7F]|[\x80-\xFF]{1,7}[\x00-\x7F])|(?:[\x0C-\x7F]|[\x80-\xFF]{1,7}[\x00-\x7F]))",
+        b"(?:(?:[\x0d-\x7f]|[\x80-\xff]{1,7}[\x00-\x7f])|(?:[\x0c-\x7f]|[\x80-\xff]{1,7}[\x00-\x7f]))",
     ),
     (
         [[0, 1, -1]],
         False,
-        b"(?:[\x00\x01]|(?:[\x0D-\x7F]|[\x80-\xFF]{1,7}[\x00-\x7F]))",
+        b"(?:[\x00\x01]|(?:[\x0d-\x7f]|[\x80-\xff]{1,7}[\x00-\x7f]))",
     ),
     (
         [[0, 1, -2]],
         False,
-        b"(?:[\x00\x01]|(?:[\x0C-\x7f]|[\x80-\xFF]{1,7}[\x00-\x7F]))",
+        b"(?:[\x00\x01]|(?:[\x0c-\x7f]|[\x80-\xff]{1,7}[\x00-\x7f]))",
     ),
     (
         [[0, 1, -2], [1, -2]],
         True,
-        b"(?:[\x01]|(?:[\x0C-\x7f]|[\x80-\xFF]{1,7}[\x00-\x7F]))",
+        b"(?:[\x01]|(?:[\x0c-\x7f]|[\x80-\xff]{1,7}[\x00-\x7f]))",
     ),
     ([[0, 1]], False, b"[\x00\x01]"),
 ]
 
 
-@pytest.mark.parametrize(
-    "column_list, skip_first, expected_value", generate_signature_regex_params
-)
+@pytest.mark.parametrize("column_list, skip_first, expected_value", generate_signature_regex_params)
 def test_generate_signature_regex(column_list, skip_first, expected_value):
     if expected_value == -1:
         with pytest.raises(CarvingError):

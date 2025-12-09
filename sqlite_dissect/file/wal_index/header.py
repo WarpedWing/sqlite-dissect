@@ -35,16 +35,13 @@ WriteAheadLogIndexCheckpointInfo(object)
 
 class WriteAheadLogIndexHeader(SQLiteHeader):
     def __init__(self, wal_index_header_byte_array):
-
         super().__init__()
 
         logger = getLogger(LOGGER_NAME)
 
         if len(wal_index_header_byte_array) != WAL_INDEX_HEADER_LENGTH:
             log_message = "The wal index header byte array of size: {} is not the expected size of: {}."
-            log_message = log_message.format(
-                len(wal_index_header_byte_array), WAL_INDEX_HEADER_LENGTH
-            )
+            log_message = log_message.format(len(wal_index_header_byte_array), WAL_INDEX_HEADER_LENGTH)
             logger.error(log_message)
             raise ValueError(log_message)
 
@@ -80,28 +77,16 @@ class WriteAheadLogIndexHeader(SQLiteHeader):
         self.page_size = self.sub_headers[0].page_size
         self.endianness = self.sub_headers[0].endianness
 
-        checkpoint_start_offset = (
-            WAL_INDEX_NUMBER_OF_SUB_HEADERS * WAL_INDEX_SUB_HEADER_LENGTH
-        )
-        checkpoint_end_offset = (
-            checkpoint_start_offset + WAL_INDEX_CHECKPOINT_INFO_LENGTH
-        )
+        checkpoint_start_offset = WAL_INDEX_NUMBER_OF_SUB_HEADERS * WAL_INDEX_SUB_HEADER_LENGTH
+        checkpoint_end_offset = checkpoint_start_offset + WAL_INDEX_CHECKPOINT_INFO_LENGTH
         wal_index_checkpoint_info_byte_array = wal_index_header_byte_array[
             checkpoint_start_offset:checkpoint_end_offset
         ]
-        self.checkpoint_info = WriteAheadLogIndexCheckpointInfo(
-            wal_index_checkpoint_info_byte_array, self.endianness
-        )
+        self.checkpoint_info = WriteAheadLogIndexCheckpointInfo(wal_index_checkpoint_info_byte_array, self.endianness)
 
-        lock_reserved_start_offset = (
-            checkpoint_start_offset + WAL_INDEX_CHECKPOINT_INFO_LENGTH
-        )
-        lock_reserved_end_offset = (
-            lock_reserved_start_offset + WAL_INDEX_LOCK_RESERVED_LENGTH
-        )
-        self.lock_reserved = wal_index_header_byte_array[
-            lock_reserved_start_offset:lock_reserved_end_offset
-        ]
+        lock_reserved_start_offset = checkpoint_start_offset + WAL_INDEX_CHECKPOINT_INFO_LENGTH
+        lock_reserved_end_offset = lock_reserved_start_offset + WAL_INDEX_LOCK_RESERVED_LENGTH
+        self.lock_reserved = wal_index_header_byte_array[lock_reserved_start_offset:lock_reserved_end_offset]
 
         self.md5_hex_digest = get_md5_hash(wal_index_header_byte_array)
 
@@ -110,23 +95,14 @@ class WriteAheadLogIndexHeader(SQLiteHeader):
         string = string.format(self.page_size, self.md5_hex_digest)
         for sub_header_index in range(len(self.sub_headers)):
             string += "\n" + padding + "Sub Header:\n{}"
-            string = string.format(
-                self.sub_headers[sub_header_index].stringify(padding + "\t")
-            )
-        string += (
-            "\n"
-            + padding
-            + "Checkpoint Info:\n{}".format(
-                self.checkpoint_info.stringify(padding + "\t")
-            )
-        )
+            string = string.format(self.sub_headers[sub_header_index].stringify(padding + "\t"))
+        string += "\n" + padding + "Checkpoint Info:\n{}".format(self.checkpoint_info.stringify(padding + "\t"))
         string += "\n" + padding + f"Lock Reserved (Hex): {hexlify(self.lock_reserved)}"
         return string
 
 
 class WriteAheadLogIndexSubHeader(SQLiteHeader):
     def __init__(self, index, wal_index_sub_header_byte_array):
-
         super().__init__()
 
         logger = getLogger(LOGGER_NAME)
@@ -140,18 +116,14 @@ class WriteAheadLogIndexSubHeader(SQLiteHeader):
 
         if len(wal_index_sub_header_byte_array) != WAL_INDEX_SUB_HEADER_LENGTH:
             log_message = "The wal index sub header byte array of size: {} is not the expected size of: {}."
-            log_message = log_message.format(
-                len(wal_index_sub_header_byte_array), WAL_INDEX_SUB_HEADER_LENGTH
-            )
+            log_message = log_message.format(len(wal_index_sub_header_byte_array), WAL_INDEX_SUB_HEADER_LENGTH)
             logger.error(log_message)
             raise ValueError(log_message)
 
         self.endianness = ENDIANNESS.LITTLE_ENDIAN
 
         # Retrieve the file format version in little endian
-        self.file_format_version = unpack(b"<I", wal_index_sub_header_byte_array[0:4])[
-            0
-        ]
+        self.file_format_version = unpack(b"<I", wal_index_sub_header_byte_array[0:4])[0]
 
         """
 
@@ -161,39 +133,27 @@ class WriteAheadLogIndexSubHeader(SQLiteHeader):
         """
 
         if self.file_format_version != WAL_INDEX_FILE_FORMAT_VERSION:
-
             # Retrieve the file format version in big endian
-            self.file_format_version = unpack(
-                b">I", wal_index_sub_header_byte_array[0:4]
-            )[0]
+            self.file_format_version = unpack(b">I", wal_index_sub_header_byte_array[0:4])[0]
 
             if self.file_format_version != WAL_INDEX_FILE_FORMAT_VERSION:
-
                 log_message = "The file format version is invalid"
                 logger.error(log_message)
                 raise HeaderParsingError(log_message)
 
-            else:
+            self.endianness = ENDIANNESS.BIG_ENDIAN
 
-                self.endianness = ENDIANNESS.BIG_ENDIAN
+            log_message = "The wal index file is in big endian which is currently not supported."
+            logger.error(log_message)
+            raise NotImplementedError(log_message)
 
-                log_message = "The wal index file is in big endian which is currently not supported."
-                logger.error(log_message)
-                raise NotImplementedError(log_message)
-
-        self.unused_padding_field = unpack(b"<I", wal_index_sub_header_byte_array[4:8])[
-            0
-        ]
+        self.unused_padding_field = unpack(b"<I", wal_index_sub_header_byte_array[4:8])[0]
         self.change_counter = unpack(b"<I", wal_index_sub_header_byte_array[8:12])[0]
         self.initialized = ord(wal_index_sub_header_byte_array[12:13])
         self.checksums_in_big_endian = ord(wal_index_sub_header_byte_array[13:14])
         self.page_size = unpack(b"<H", wal_index_sub_header_byte_array[14:16])[0]
-        self.last_valid_frame_index = unpack(
-            b"<I", wal_index_sub_header_byte_array[16:20]
-        )[0]
-        self.database_size_in_pages = unpack(
-            b"<I", wal_index_sub_header_byte_array[20:24]
-        )[0]
+        self.last_valid_frame_index = unpack(b"<I", wal_index_sub_header_byte_array[16:20])[0]
+        self.database_size_in_pages = unpack(b"<I", wal_index_sub_header_byte_array[20:24])[0]
         self.frame_checksum_1 = unpack(b"<I", wal_index_sub_header_byte_array[24:28])[0]
         self.frame_checksum_2 = unpack(b"<I", wal_index_sub_header_byte_array[28:32])[0]
         self.salt_1 = unpack(b"<I", wal_index_sub_header_byte_array[32:36])[0]
@@ -260,15 +220,11 @@ class WriteAheadLogIndexSubHeader(SQLiteHeader):
 
 class WriteAheadLogIndexCheckpointInfo:
     def __init__(self, wal_index_checkpoint_info_byte_array, endianness):
-
         logger = getLogger(LOGGER_NAME)
 
         self.endianness = endianness
 
-        if (
-            len(wal_index_checkpoint_info_byte_array)
-            != WAL_INDEX_CHECKPOINT_INFO_LENGTH
-        ):
+        if len(wal_index_checkpoint_info_byte_array) != WAL_INDEX_CHECKPOINT_INFO_LENGTH:
             log_message = "The wal index checkpoint info byte array of size: {} is not the expected size of: {}."
             log_message = log_message.format(
                 len(wal_index_checkpoint_info_byte_array),
@@ -277,9 +233,7 @@ class WriteAheadLogIndexCheckpointInfo:
             logger.error(log_message)
             raise ValueError(log_message)
 
-        self.number_of_frames_backfilled_in_database = unpack(
-            b"<I", wal_index_checkpoint_info_byte_array[0:4]
-        )[0]
+        self.number_of_frames_backfilled_in_database = unpack(b"<I", wal_index_checkpoint_info_byte_array[0:4])[0]
 
         """
 
@@ -293,11 +247,7 @@ class WriteAheadLogIndexCheckpointInfo:
             start_offset = index * WAL_INDEX_READER_MARK_LENGTH
             start_offset += WAL_INDEX_NUMBER_OF_FRAMES_BACKFILLED_IN_DATABASE_LENGTH
             end_offset = start_offset + WAL_INDEX_READER_MARK_LENGTH
-            self.reader_marks.append(
-                unpack(
-                    b"<I", wal_index_checkpoint_info_byte_array[start_offset:end_offset]
-                )[0]
-            )
+            self.reader_marks.append(unpack(b"<I", wal_index_checkpoint_info_byte_array[start_offset:end_offset])[0])
 
         self.md5_hex_digest = get_md5_hash(wal_index_checkpoint_info_byte_array)
 
@@ -308,22 +258,9 @@ class WriteAheadLogIndexCheckpointInfo:
         return self.stringify().replace("\t", "").replace("\n", " ")
 
     def stringify(self, padding=""):
-        string = (
-            padding
-            + "Endianness: {}\n"
-            + padding
-            + "Number of Frames Backfilled in Database: {}"
-        )
-        string = string.format(
-            self.endianness, self.number_of_frames_backfilled_in_database
-        )
+        string = padding + "Endianness: {}\n" + padding + "Number of Frames Backfilled in Database: {}"
+        string = string.format(self.endianness, self.number_of_frames_backfilled_in_database)
         for reader_mark_index in range(len(self.reader_marks)):
-            string += (
-                "\n"
-                + padding
-                + "Reader Mark {}: {}".format(
-                    reader_mark_index + 1, self.reader_marks[reader_mark_index]
-                )
-            )
+            string += "\n" + padding + f"Reader Mark {reader_mark_index + 1}: {self.reader_marks[reader_mark_index]}"
         string += "\n" + padding + f"MD5 Hex Digest: {self.md5_hex_digest}"
         return string

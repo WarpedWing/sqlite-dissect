@@ -1,8 +1,5 @@
-from ctypes import pointer
-
 import pytest
 
-from sqlite_dissect.constants import PAGE_TYPE
 from sqlite_dissect.exception import OutputError
 from sqlite_dissect.output import get_page_breakdown, get_pointer_map_entries_breakdown
 
@@ -71,9 +68,7 @@ def test_get_pointer_map_entries_breakdown():
 
     # if version.pointer_map_pages contains a pointer_map_page without any entries, OutputError is raised
     with pytest.raises(OutputError):
-        _ = get_pointer_map_entries_breakdown(
-            MockVersion([MockPointerMapPage([], 0, 0)], 0)
-        )
+        _ = get_pointer_map_entries_breakdown(MockVersion([MockPointerMapPage([], 0, 0)], 0))
 
     # if version is valid, return value is a list of tuples containing map page info
     assert get_pointer_map_entries_breakdown(

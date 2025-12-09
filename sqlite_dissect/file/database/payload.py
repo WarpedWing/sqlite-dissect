@@ -27,11 +27,9 @@ RecordColumn(object)
 
 
 class Payload:
-
     __metaclass__ = ABCMeta
 
     def __init__(self):
-
         self.start_offset = None
         self.byte_size = None
         self.end_offset = None
@@ -107,13 +105,7 @@ class Payload:
         )
         if print_record_columns:
             for record_column in self.record_columns:
-                string += (
-                    "\n"
-                    + padding
-                    + "Record Column:\n{}".format(
-                        record_column.stringify(padding + "\t")
-                    )
-                )
+                string += "\n" + padding + "Record Column:\n{}".format(record_column.stringify(padding + "\t"))
         return string
 
 
@@ -126,13 +118,11 @@ class Record(Payload):
         bytes_on_first_page=None,
         overflow=bytearray(),
     ):
-
         super().__init__()
 
         logger = getLogger(LOGGER_NAME)
 
         if bytes_on_first_page is None:
-
             bytes_on_first_page = int(payload_byte_size)
 
             if overflow:
@@ -148,9 +138,7 @@ class Record(Payload):
             raise RecordParsingError(log_message)
 
         if bytes_on_first_page > payload_byte_size:
-            log_message = (
-                "Bytes on first page: {} greater than payload byte size: {} on page."
-            )
+            log_message = "Bytes on first page: {} greater than payload byte size: {} on page."
             log_message = log_message.format(bytes_on_first_page, payload_byte_size)
             logger.error(log_message)
             raise RecordParsingError(log_message)
@@ -169,24 +157,19 @@ class Record(Payload):
             logger.error(log_message)
             raise RecordParsingError(log_message)
 
-        self.header_byte_size, self.header_byte_size_varint_length = decode_varint(
-            page, self.start_offset
-        )
+        self.header_byte_size, self.header_byte_size_varint_length = decode_varint(page, self.start_offset)
         self.header_start_offset = int(self.start_offset)
         self.header_end_offset = int(self.start_offset + self.header_byte_size)
         self.body_start_offset = int(self.header_end_offset)
         self.body_end_offset = int(self.end_offset)
 
-        current_page_record_content = page[
-            int(self.start_offset) : int(self.end_offset)
-        ]
+        current_page_record_content = page[int(self.start_offset) : int(self.end_offset)]
 
         total_record_content = current_page_record_content + overflow
 
         if len(total_record_content) != self.byte_size:
             log_message = (
-                "The record content was found to be a different length of: {} than the specified byte "
-                "size: {} on page."
+                "The record content was found to be a different length of: {} than the specified byte size: {} on page."
             )
             log_message = log_message.format(len(total_record_content), self.byte_size)
             logger.error(log_message)
@@ -198,23 +181,17 @@ class Record(Payload):
         current_body_offset = 0
         column_index = 0
         while current_header_offset < self.header_byte_size:
-
-            serial_type, serial_type_varint_length = decode_varint(
-                total_record_content, current_header_offset
-            )
+            serial_type, serial_type_varint_length = decode_varint(total_record_content, current_header_offset)
 
             self.serial_type_signature += str(get_serial_type_signature(serial_type))
 
             record_column_md5_hash_string = total_record_content[
-                current_header_offset : current_header_offset
-                + serial_type_varint_length
+                current_header_offset : current_header_offset + serial_type_varint_length
             ]
 
             body_content = total_record_content[self.header_byte_size : self.byte_size]
 
-            content_size, value = get_record_content(
-                serial_type, body_content, current_body_offset
-            )
+            content_size, value = get_record_content(serial_type, body_content, current_body_offset)
 
             """
 
@@ -222,9 +199,7 @@ class Record(Payload):
 
             """
 
-            record_column_md5_hash_string += body_content[
-                current_body_offset : current_body_offset + content_size
-            ]
+            record_column_md5_hash_string += body_content[current_body_offset : current_body_offset + content_size]
 
             record_column_md5_hex_digest = get_md5_hash(record_column_md5_hash_string)
 

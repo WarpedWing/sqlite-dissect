@@ -8,7 +8,6 @@ import json
 import uuid
 from datetime import datetime
 from os import path
-from typing import Optional
 
 from sqlite_dissect._version import __version__
 from sqlite_dissect.utilities import hash_file
@@ -20,8 +19,7 @@ def guid_list_to_objects(guids):
     """
     if guids is None:
         return []
-    else:
-        return list(map(lambda g: {"@id": g}, guids))
+    return list(map(lambda g: {"@id": g}, guids))
 
 
 class CaseExporter:
@@ -74,19 +72,14 @@ class CaseExporter:
 
         # Loop through the list of provided options and add each configuration option to the CASE output
         for option in vars(options):
-            if (
-                getattr(options, option) is not None
-                and len(str(getattr(options, option))) > 0
-            ):
+            if getattr(options, option) is not None and len(str(getattr(options, option))) > 0:
                 configuration_options.append(
                     {
                         "@id": ("kb:configuration-entry-" + str(uuid.uuid4())),
                         "@type": "uco-configuration:ConfigurationEntry",
                         "uco-configuration:itemName": option,
                         "uco-configuration:itemValue": str(getattr(options, option)),
-                        "uco-configuration:itemType": str(
-                            type(getattr(options, option)).__name__
-                        ),
+                        "uco-configuration:itemType": str(type(getattr(options, option)).__name__),
                     }
                 )
 
@@ -134,21 +127,21 @@ class CaseExporter:
                             "@type": "uco-observable:FileFacet",
                             "uco-observable:observableCreatedTime": {
                                 "@type": "xsd:dateTime",
-                                "@value": datetime.fromtimestamp(
-                                    path.getctime(filepath)
-                                ).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                                "@value": datetime.fromtimestamp(path.getctime(filepath)).strftime(
+                                    "%Y-%m-%dT%H:%M:%S.%fZ"
+                                ),
                             },
                             "uco-observable:modifiedTime": {
                                 "@type": "xsd:dateTime",
-                                "@value": datetime.fromtimestamp(
-                                    path.getmtime(filepath)
-                                ).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                                "@value": datetime.fromtimestamp(path.getmtime(filepath)).strftime(
+                                    "%Y-%m-%dT%H:%M:%S.%fZ"
+                                ),
                             },
                             "uco-observable:accessedTime": {
                                 "@type": "xsd:dateTime",
-                                "@value": datetime.fromtimestamp(
-                                    path.getatime(filepath)
-                                ).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                                "@value": datetime.fromtimestamp(path.getatime(filepath)).strftime(
+                                    "%Y-%m-%dT%H:%M:%S.%fZ"
+                                ),
                             },
                             "uco-observable:extension": extension,
                             "uco-observable:fileName": path.basename(filepath),
@@ -215,15 +208,10 @@ class CaseExporter:
             )
 
             return guid
-        else:
-            self.logger.critical(
-                f"Attempting to add invalid filepath to CASE Observable export: {filepath}"
-            )
-            return None
+        self.logger.critical(f"Attempting to add invalid filepath to CASE Observable export: {filepath}")
+        return None
 
-    def link_observable_relationship(
-        self, source_guid: str, target_guid: str, relationship: str
-    ) -> None:
+    def link_observable_relationship(self, source_guid: str, target_guid: str, relationship: str) -> None:
         self.case["@graph"].append(
             {
                 "@id": ("kb:export-artifact-relationship-" + str(uuid.uuid4())),
@@ -252,9 +240,7 @@ class CaseExporter:
             # Add the export result GUID to the list to be extracted
             self.result_guids.append(export_guid)
 
-    def generate_provenance_record(
-        self, description: str, guids: list
-    ) -> Optional[str]:
+    def generate_provenance_record(self, description: str, guids: list) -> str | None:
         """
         Generates a provenance record for the tool and returns the GUID for the new object
         """
@@ -272,8 +258,7 @@ class CaseExporter:
             }
             self.case["@graph"].append(record)
             return guid
-        else:
-            return None
+        return None
 
     def generate_header(self) -> str:
         """
@@ -321,14 +306,10 @@ class CaseExporter:
 
         Ontology source: https://github.com/casework/CASE/blob/master/ontology/investigation/investigation.ttl
         """
-        source_provenance_guid = self.generate_provenance_record(
-            "SQLite source artifacts", source_guids
-        )
+        source_provenance_guid = self.generate_provenance_record("SQLite source artifacts", source_guids)
         if source_provenance_guid is not None:
             source_guids.append(source_provenance_guid)
-        result_provenance_guid = self.generate_provenance_record(
-            "SQLite Dissect output artifacts", self.result_guids
-        )
+        result_provenance_guid = self.generate_provenance_record("SQLite Dissect output artifacts", self.result_guids)
         if result_provenance_guid is not None:
             self.result_guids.append(result_provenance_guid)
 

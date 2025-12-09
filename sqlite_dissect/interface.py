@@ -1,10 +1,13 @@
+from logging import getLogger
 from os.path import basename, normpath
+from warnings import warn
 
 from sqlite_dissect.carving.carver import SignatureCarver
 from sqlite_dissect.carving.signature import Signature
 from sqlite_dissect.constants import (
     BASE_VERSION_NUMBER,
     CELL_SOURCE,
+    LOGGER_NAME,
     MASTER_SCHEMA_ROW_TYPE,
 )
 from sqlite_dissect.export.csv_export import CommitCsvExporter
@@ -47,9 +50,7 @@ export_version_history_to_sqlite(export_directory, sqlite_file_name, version_his
 """
 
 
-def create_database(
-    file_identifier, store_in_memory=False, strict_format_checking=True
-):
+def create_database(file_identifier, store_in_memory=False, strict_format_checking=True):
     return Database(file_identifier, store_in_memory, strict_format_checking)
 
 
@@ -78,28 +79,20 @@ def get_index_names(database):
 
 
 def get_master_schema_entry(master_schema_entry_name, version_history):
-    master_schema_entries = version_history.versions[
-        BASE_VERSION_NUMBER
-    ].master_schema.master_schema_entries
+    master_schema_entries = version_history.versions[BASE_VERSION_NUMBER].master_schema.master_schema_entries
     for master_schema_entry in master_schema_entries:
         if master_schema_entry.name == master_schema_entry_name:
             return master_schema_entry
-    raise Exception(
-        "Master schema entry not found for master schema entry name: %s."
-        % master_schema_entry_name
-    )
+    raise Exception(f"Master schema entry not found for master schema entry name: {master_schema_entry_name}.")
 
 
 def get_column_index(column_name, master_schema_entry_name, version_history):
-    master_schema_entry = get_master_schema_entry(
-        master_schema_entry_name, version_history
-    )
+    master_schema_entry = get_master_schema_entry(master_schema_entry_name, version_history)
     for column_definition in master_schema_entry.column_definitions:
         if column_definition.column_name == column_name:
             return column_definition.index
     raise Exception(
-        "Column definition not found for column name: %s and master schema entry name: %s."
-        % (column_name, master_schema_entry_name)
+        f"Column definition not found for column name: {column_name} and master schema entry name: {master_schema_entry_name}."
     )
 
 
@@ -109,13 +102,10 @@ def select_all_from_table(table_name, version):
         for master_schema_entry in version.master_schema.master_schema_entries
     }
     master_schema_entry = master_schema_entries[table_name]
-    number_of_cells, cells = aggregate_leaf_cells(
-        version.get_b_tree_root_page(master_schema_entry.root_page_number)
-    )
+    number_of_cells, cells = aggregate_leaf_cells(version.get_b_tree_root_page(master_schema_entry.root_page_number))
     if master_schema_entry.without_row_id:
         return cells.values()
-    else:
-        return sorted(cells.values(), key=lambda cell: cell.row_id)
+    return sorted(cells.values(), key=lambda cell: cell.row_id)
 
 
 def select_all_from_index(index_name, version):
@@ -124,13 +114,12 @@ def select_all_from_index(index_name, version):
         for master_schema_entry in version.master_schema.master_schema_entries
     }
     master_schema_entry = master_schema_entries[index_name]
-    number_of_cells, cells = aggregate_leaf_cells(
-        version.get_b_tree_root_page(master_schema_entry.root_page_number)
-    )
+    number_of_cells, cells = aggregate_leaf_cells(version.get_b_tree_root_page(master_schema_entry.root_page_number))
     return cells.values()
 
 
 def create_table_signature(table_name, version, version_history=None):
+    logger = getLogger(LOGGER_NAME)
     if not version_history:
         version_history = VersionHistory(version)
     master_schema_entries = {
@@ -139,18 +128,24 @@ def create_table_signature(table_name, version, version_history=None):
     }
     master_schema_entry = master_schema_entries[table_name]
     # Signatures are not currently generated/supported for "without rowid" tables and virtual tables.
-    if (
-        isinstance(master_schema_entry, OrdinaryTableRow)
-        and master_schema_entry.without_row_id
-    ):
+    if isinstance(master_schema_entry, OrdinaryTableRow) and master_schema_entry.without_row_id:
+        logger.info(
+            f"Skipping signature generation for 'WITHOUT ROWID' table '{table_name}'. "
+            f"These tables use index b-tree storage and are not currently supported for carving."
+        )
         return None
-    elif isinstance(master_schema_entry, VirtualTableRow):
+    if isinstance(master_schema_entry, VirtualTableRow):
+        logger.info(
+            f"Skipping signature generation for virtual table '{table_name}' "
+            f"(module: {getattr(master_schema_entry, 'module_name', 'unknown')}). "
+            f"Virtual tables are not supported for carving."
+        )
         return None
-    else:
-        return Signature(version_history, master_schema_entry)
+    return Signature(version_history, master_schema_entry)
 
 
 def carve_table(table_name, signature, version):
+    logger = getLogger(LOGGER_NAME)
     master_schema_entries = {
         master_schema_entry.name: master_schema_entry
         for master_schema_entry in version.master_schema.master_schema_entries
@@ -158,18 +153,18 @@ def carve_table(table_name, signature, version):
     master_schema_entry = master_schema_entries[table_name]
     # Do not carve if the table is a "without rowid" table since they are not currently supported
     if master_schema_entry.without_row_id:
+        logger.info(
+            f"Skipping carving for 'WITHOUT ROWID' table '{table_name}'. "
+            f"These tables use index b-tree storage and are not currently supported for carving."
+        )
         return []
-    b_tree_pages = get_pages_from_b_tree_page(
-        version.get_b_tree_root_page(master_schema_entry.root_page_number)
-    )
+    b_tree_pages = get_pages_from_b_tree_page(version.get_b_tree_root_page(master_schema_entry.root_page_number))
     b_tree_pages = {b_tree_page.number: b_tree_page for b_tree_page in b_tree_pages}
     carved_cells = []
     for page_number, page in b_tree_pages.items():
         #  For carving freeblocks make sure the page is a b-tree page and not overflow
         if isinstance(page, BTreePage):
-            carvings = SignatureCarver.carve_freeblocks(
-                version, CELL_SOURCE.B_TREE, page.freeblocks, signature
-            )
+            carvings = SignatureCarver.carve_freeblocks(version, CELL_SOURCE.B_TREE, page.freeblocks, signature)
             carved_cells.extend(carvings)
         carvings = SignatureCarver.carve_unallocated_space(
             version,
@@ -183,15 +178,11 @@ def carve_table(table_name, signature, version):
     return carved_cells
 
 
-def get_version_history_iterator(
-    table_or_index_name, version_history, signature=None, carve_freelist_pages=False
-):
+def get_version_history_iterator(table_or_index_name, version_history, signature=None, carve_freelist_pages=False):
     # Currently master schema entries are taken from the base version
     master_schema_entries = {
         master_schema_entry.name: master_schema_entry
-        for master_schema_entry in version_history.versions[
-            BASE_VERSION_NUMBER
-        ].master_schema.master_schema_entries
+        for master_schema_entry in version_history.versions[BASE_VERSION_NUMBER].master_schema.master_schema_entries
     }
     return VersionHistoryParser(
         version_history,
@@ -218,9 +209,7 @@ def export_table_or_index_version_history_to_csv(
 
     master_schema_entries = {
         master_schema_entry.name: master_schema_entry
-        for master_schema_entry in version_history.versions[
-            BASE_VERSION_NUMBER
-        ].master_schema.master_schema_entries
+        for master_schema_entry in version_history.versions[BASE_VERSION_NUMBER].master_schema.master_schema_entries
     }
     master_schema_entry = master_schema_entries[table_or_index_name]
     version_history_parser = VersionHistoryParser(
@@ -245,33 +234,34 @@ def export_version_history_to_csv(
     # Currently the file name prefix is taken from the base version name
     csv_prefix_file_name = basename(normpath(csv_file_name))
     commit_csv_exporter = CommitCsvExporter(export_directory, csv_prefix_file_name)
-    signatures = (
-        {signature.name: signature for signature in signatures} if signatures else None
-    )
+    logger = getLogger(LOGGER_NAME)
+    signatures = {signature.name: signature for signature in signatures} if signatures else None
     # Currently master schema entries are taken from the base version
-    for master_schema_entry in version_history.versions[
-        BASE_VERSION_NUMBER
-    ].master_schema.master_schema_entries:
+    for master_schema_entry in version_history.versions[BASE_VERSION_NUMBER].master_schema.master_schema_entries:
         if master_schema_entry.row_type in [
             MASTER_SCHEMA_ROW_TYPE.INDEX,
             MASTER_SCHEMA_ROW_TYPE.TABLE,
         ]:
-            signature = (
-                signatures[master_schema_entry.name]
-                if master_schema_entry.name in signatures
-                else None
-            )
-            carve_freelist_pages = carve_freelist_pages if signature else False
-            version_history_parser = VersionHistoryParser(
-                version_history,
-                master_schema_entry,
-                None,
-                None,
-                signature,
-                carve_freelist_pages,
-            )
-            for commit in version_history_parser:
-                commit_csv_exporter.write_commit(master_schema_entry, commit)
+            try:
+                signature = signatures.get(master_schema_entry.name) if signatures else None
+                carve_freelist_pages = carve_freelist_pages if signature else False
+                version_history_parser = VersionHistoryParser(
+                    version_history,
+                    master_schema_entry,
+                    None,
+                    None,
+                    signature,
+                    carve_freelist_pages,
+                )
+                for commit in version_history_parser:
+                    commit_csv_exporter.write_commit(master_schema_entry, commit)
+            except Exception as e:
+                log_message = (
+                    f"Failed to process table/index '{master_schema_entry.name}' during CSV export: {e}. "
+                    f"Skipping this entry and continuing with remaining data."
+                )
+                logger.warning(log_message)
+                warn(log_message, RuntimeWarning)
 
 
 def export_table_or_index_version_history_to_sqlite(
@@ -282,15 +272,11 @@ def export_table_or_index_version_history_to_sqlite(
     signature=None,
     carve_freelist_pages=False,
 ):
-    with CommitSqliteExporter(
-        export_directory, sqlite_file_name
-    ) as commit_sqlite_exporter:
+    with CommitSqliteExporter(export_directory, sqlite_file_name) as commit_sqlite_exporter:
         # Currently master schema entries are taken from the base version
         master_schema_entries = {
             master_schema_entry.name: master_schema_entry
-            for master_schema_entry in version_history.versions[
-                BASE_VERSION_NUMBER
-            ].master_schema.master_schema_entries
+            for master_schema_entry in version_history.versions[BASE_VERSION_NUMBER].master_schema.master_schema_entries
         }
         master_schema_entry = master_schema_entries[table_or_index_name]
         version_history_parser = VersionHistoryParser(
@@ -312,33 +298,32 @@ def export_version_history_to_sqlite(
     signatures=None,
     carve_freelist_pages=False,
 ):
-    signatures = (
-        {signature.name: signature for signature in signatures} if signatures else None
-    )
-    with CommitSqliteExporter(
-        export_directory, sqlite_file_name
-    ) as commit_sqlite_exporter:
+    logger = getLogger(LOGGER_NAME)
+    signatures = {signature.name: signature for signature in signatures} if signatures else None
+    with CommitSqliteExporter(export_directory, sqlite_file_name) as commit_sqlite_exporter:
         # Currently master schema entries are taken from the base version
-        for master_schema_entry in version_history.versions[
-            BASE_VERSION_NUMBER
-        ].master_schema.master_schema_entries:
+        for master_schema_entry in version_history.versions[BASE_VERSION_NUMBER].master_schema.master_schema_entries:
             if master_schema_entry.row_type in [
                 MASTER_SCHEMA_ROW_TYPE.INDEX,
                 MASTER_SCHEMA_ROW_TYPE.TABLE,
             ]:
-                signature = (
-                    signatures[master_schema_entry.name]
-                    if master_schema_entry.name in signatures
-                    else None
-                )
-                carve_freelist_pages = carve_freelist_pages if signature else False
-                version_history_parser = VersionHistoryParser(
-                    version_history,
-                    master_schema_entry,
-                    None,
-                    None,
-                    signature,
-                    carve_freelist_pages,
-                )
-                for commit in version_history_parser:
-                    commit_sqlite_exporter.write_commit(master_schema_entry, commit)
+                try:
+                    signature = signatures.get(master_schema_entry.name) if signatures else None
+                    carve_freelist_pages = carve_freelist_pages if signature else False
+                    version_history_parser = VersionHistoryParser(
+                        version_history,
+                        master_schema_entry,
+                        None,
+                        None,
+                        signature,
+                        carve_freelist_pages,
+                    )
+                    for commit in version_history_parser:
+                        commit_sqlite_exporter.write_commit(master_schema_entry, commit)
+                except Exception as e:
+                    log_message = (
+                        f"Failed to process table/index '{master_schema_entry.name}' during SQLite export: {e}. "
+                        f"Skipping this entry and continuing with remaining data."
+                    )
+                    logger.warning(log_message)
+                    warn(log_message, RuntimeWarning)

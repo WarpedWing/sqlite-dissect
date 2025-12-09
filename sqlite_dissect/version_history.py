@@ -54,7 +54,6 @@ class VersionHistory:
     """
 
     def __init__(self, database, write_ahead_log=None):
-
         logger = getLogger(LOGGER_NAME)
 
         # Set the database and write ahead log
@@ -72,12 +71,9 @@ class VersionHistory:
         self.versions = {BASE_VERSION_NUMBER: self._database}
 
         if self._write_ahead_log:
-
             # Set the database text encoding to the write ahead log file if it was set in the database file
             if self._database.database_text_encoding:
-                self._write_ahead_log.file_handle.database_text_encoding = (
-                    self._database.database_text_encoding
-                )
+                self._write_ahead_log.file_handle.database_text_encoding = self._database.database_text_encoding
 
             # Set the last database header and master schema to refer to
             last_database_header = self._database.database_header
@@ -93,7 +89,6 @@ class VersionHistory:
 
             # Iterate through all of the frames in the write ahead log
             for frame_index in range(len(self._write_ahead_log.frames)):
-
                 # Set the frame
                 frame = self._write_ahead_log.frames[frame_index]
 
@@ -103,9 +98,7 @@ class VersionHistory:
                         "Current frame index: {} did not match the expected frame index: {} while parsing "
                         "frames for commit record version: {}."
                     )
-                    log_message = log_message.format(
-                        frame_index, frame.frame_index, commit_record_number
-                    )
+                    log_message = log_message.format(frame_index, frame.frame_index, commit_record_number)
                     logger.error(log_message)
                     raise WalFrameParsingError(log_message)
 
@@ -115,12 +108,9 @@ class VersionHistory:
                 # Make sure the frame belongs to the commit record we are currently working on creating
                 if frame.commit_record_number != commit_record_number:
                     log_message = (
-                        "Current frame commit record number: {} did not match the expected commit record "
-                        "number : {}."
+                        "Current frame commit record number: {} did not match the expected commit record number : {}."
                     )
-                    log_message = log_message.format(
-                        frame.commit_record_number, commit_record_number
-                    )
+                    log_message = log_message.format(frame.commit_record_number, commit_record_number)
                     logger.error(log_message)
                     raise WalFrameParsingError(log_message)
 
@@ -135,7 +125,6 @@ class VersionHistory:
 
                 # Check if this frame is a commit frame
                 if frame.commit_frame:
-
                     # Create the commit record since we now have all the frames for this commit record
                     commit_record = WriteAheadLogCommitRecord(
                         commit_record_number,
@@ -186,7 +175,6 @@ class VersionHistory:
 
             # Check if there are remaining frames which indicates the last commit record was not committed
             if len(frames) > 0:
-
                 # Create the commit record
                 commit_record = WriteAheadLogCommitRecord(
                     commit_record_number,
@@ -239,12 +227,8 @@ class VersionHistory:
         string = "File Type: {}"
         string = string.format(self.number_of_versions)
         if print_versions:
-            for version in self.versions:
-                string += (
-                    "\n"
-                    + padding
-                    + "Page:\n{}".format(version.stringify(padding + "\t"))
-                )
+            for version in self.versions.values():
+                string += "\n" + padding + "Page:\n{}".format(version.stringify(padding + "\t"))
         return string
 
 
@@ -288,9 +272,7 @@ class VersionHistoryParser(VersionParser):
         """
 
         # Call to the super class
-        super().__init__(
-            version_history, master_schema_entry, version_number, ending_version_number
-        )
+        super().__init__(version_history, master_schema_entry, version_number, ending_version_number)
 
         logger = getLogger(LOGGER_NAME)
 
@@ -313,7 +295,6 @@ class VersionHistoryParser(VersionParser):
         self._virtual_table = isinstance(master_schema_entry, VirtualTableRow)
 
         if signature:
-
             if signature.name != self.name:
                 log_message = "Invalid signature name: {} for version history parser on master schema entry name: {}."
                 log_message = log_message.format(signature.name, self.name)
@@ -325,9 +306,7 @@ class VersionHistoryParser(VersionParser):
                     "Invalid signature row type: {} for signature name: {} for version history parser on "
                     "master schema entry name: {} and row type: {}."
                 )
-                log_message = log_message.format(
-                    signature.row_type, signature.name, self.name, self.row_type
-                )
+                log_message = log_message.format(signature.row_type, signature.name, self.name, self.row_type)
                 logger.error(log_message)
                 raise ValueError(log_message)
 
@@ -379,8 +358,7 @@ class VersionHistoryParser(VersionParser):
         ]:
             # Return an empty iterator
             return iter([])
-        elif self._virtual_table:
-
+        if self._virtual_table:
             """
 
             In the case this is a virtual table, we check to see if the root page is 0.  Additional use cases
@@ -393,10 +371,7 @@ class VersionHistoryParser(VersionParser):
             """
 
             # Check to make sure all root page numbers are 0 as should be with virtual tables.
-            if not all(
-                root_page_number == 0
-                for root_page_number in self.root_page_number_version_index.values()
-            ):
+            if not all(root_page_number == 0 for root_page_number in self.root_page_number_version_index.values()):
                 log_message = (
                     "Virtual table found with root page version index: {} where all root page numbers "
                     "are not equal to 0 in version history parser for master schema entry with "
@@ -435,10 +410,7 @@ class VersionHistoryParser(VersionParser):
             # Return an empty iterator
             return iter([])
 
-        elif (
-            self.parser_starting_version_number is not None
-            and self.parser_ending_version_number is not None
-        ):
+        if self.parser_starting_version_number is not None and self.parser_ending_version_number is not None:
             return self.VersionParserIterator(
                 self.name,
                 self._versions,
@@ -449,18 +421,13 @@ class VersionHistoryParser(VersionParser):
                 self.signature,
                 self.carve_freelist_pages,
             )
-        else:
-            # Return an empty iterator
-            return iter([])
+        # Return an empty iterator
+        return iter([])
 
     def stringify(self, padding="", print_cells=True):
         string = ""
         for commit in self:
-            string += (
-                "\n"
-                + padding
-                + "Commit:\n{}".format(commit.stringify(padding + "\t", print_cells))
-            )
+            string += "\n" + padding + "Commit:\n{}".format(commit.stringify(padding + "\t", print_cells))
         return super().stringify(padding) + string
 
     class VersionParserIterator:
@@ -546,21 +513,13 @@ class VersionHistoryParser(VersionParser):
             )
             if print_cells:
                 for current_cell in self._current_cells.values():
-                    string += (
-                        "\n"
-                        + padding
-                        + "Cell:\n{}".format(current_cell.stringify(padding + "\t"))
-                    )
+                    string += "\n" + padding + "Cell:\n{}".format(current_cell.stringify(padding + "\t"))
             return string
 
         def next(self):
-
             if self._current_version_number <= self._parser_ending_version_number:
-
                 version = self._versions[self._current_version_number]
-                root_page_number = self._root_page_number_version_index[
-                    self._current_version_number
-                ]
+                root_page_number = self._root_page_number_version_index[self._current_version_number]
 
                 # Create the commit object
                 commit = Commit(
@@ -576,38 +535,38 @@ class VersionHistoryParser(VersionParser):
                 b_tree_updated = False
 
                 # Check if this is the first version to be investigated
-                if self._current_version_number == self._parser_starting_version_number:
-                    b_tree_updated = True
-
-                # Check if the root page number changed
-                elif (
-                    root_page_number
-                    != self._root_page_number_version_index[
-                        self._current_version_number - 1
+                if (
+                    self._current_version_number == self._parser_starting_version_number
+                    or (root_page_number != self._root_page_number_version_index[self._current_version_number - 1])
+                    or [
+                        page_number
+                        for page_number in self._current_b_tree_page_numbers
+                        if page_number in version.updated_b_tree_page_numbers
                     ]
                 ):
                     b_tree_updated = True
 
-                # Check if any of the pages changed (other than the root page specifically here)
-                elif [
-                    page_number
-                    for page_number in self._current_b_tree_page_numbers
-                    if page_number in version.updated_b_tree_page_numbers
-                ]:
-                    b_tree_updated = True
-
                 # Parse the b-tree page structure if it was updated
                 if b_tree_updated:
+                    try:
+                        # Get the root page and root page numbers from the first version
+                        root_page = version.get_b_tree_root_page(root_page_number)
+                        b_tree_pages = get_pages_from_b_tree_page(root_page)
+                        self._current_b_tree_page_numbers = [b_tree_page.number for b_tree_page in b_tree_pages]
 
-                    # Get the root page and root page numbers from the first version
-                    root_page = version.get_b_tree_root_page(root_page_number)
-                    b_tree_pages = get_pages_from_b_tree_page(root_page)
-                    self._current_b_tree_page_numbers = [
-                        b_tree_page.number for b_tree_page in b_tree_pages
-                    ]
-
-                    # Update the b-tree page numbers in the commit record
-                    commit.b_tree_page_numbers = self._current_b_tree_page_numbers
+                        # Update the b-tree page numbers in the commit record
+                        commit.b_tree_page_numbers = self._current_b_tree_page_numbers
+                    except Exception as e:
+                        log_message = (
+                            f"Unable to parse b-tree structure for '{self._name}' "
+                            f"(page {root_page_number}) in version {self._current_version_number}: {e}. "
+                            f"Skipping this version and continuing with remaining data."
+                        )
+                        getLogger(LOGGER_NAME).warning(log_message)
+                        warn(log_message, RuntimeWarning)
+                        # Skip this version by incrementing and recursively calling next
+                        self._current_version_number += 1
+                        return self.next()
 
                     updated_b_tree_page_numbers = [
                         page_number
@@ -634,7 +593,8 @@ class VersionHistoryParser(VersionParser):
                         log_message = (
                             "The total aggregated leaf cells: {} does not match the length of the "
                             "cells parsed: {} for version: {} of page type: {} iterating between versions "
-                            "{} and {} over b-tree page numbers: {} with updated b-tree pages: {}."
+                            "{} and {} over b-tree page numbers: {} with updated b-tree pages: {}. "
+                            "This may indicate anti-forensic manipulation. Continuing with parsed cells."
                         )
                         log_message = log_message.format(
                             total,
@@ -646,8 +606,8 @@ class VersionHistoryParser(VersionParser):
                             self._current_b_tree_page_numbers,
                             updated_b_tree_page_numbers,
                         )
-                        getLogger(LOGGER_NAME).error(log_message)
-                        raise VersionParsingError(log_message)
+                        getLogger(LOGGER_NAME).warning(log_message)
+                        warn(log_message, RuntimeWarning)
 
                     """
 
@@ -663,7 +623,6 @@ class VersionHistoryParser(VersionParser):
 
                     # Iterate through the current cells
                     for current_cell_md5, current_cell in self._current_cells.items():
-
                         # Remove the cell from the added cells if it was already pre-existing
                         if current_cell_md5 in added_cells:
                             del added_cells[current_cell_md5]
@@ -688,38 +647,38 @@ class VersionHistoryParser(VersionParser):
                     """
 
                     if self._page_type == PAGE_TYPE.B_TREE_TABLE_LEAF:
+                        # Filter cells to only those with row_id (anti-forensics may mix cell types)
+                        added_cells_with_row_id = {k: v for k, v in added_cells.items() if hasattr(v, 'row_id')}
+                        deleted_cells_with_row_id = {k: v for k, v in deleted_cells.items() if hasattr(v, 'row_id')}
 
                         # Organize a added cells dictionary keyed off of row id
-                        added_cells_by_row_id = {
-                            added_cell.row_id: added_cell
-                            for added_cell in added_cells.values()
-                        }
+                        added_cells_by_row_id = {added_cell.row_id: added_cell for added_cell in added_cells_with_row_id.values()}
 
                         # Get the row ids of the cells that were updated by checking against the deleted cells
                         updated_cell_row_ids = [
                             deleted_cell.row_id
-                            for deleted_cell in deleted_cells.values()
+                            for deleted_cell in deleted_cells_with_row_id.values()
                             if deleted_cell.row_id in added_cells_by_row_id
                         ]
 
                         # Get the cells that might possibly have been updated by comparing the row ids
                         updated_cells = {
                             updated_cell.md5_hex_digest: updated_cell
-                            for updated_cell in added_cells.values()
+                            for updated_cell in added_cells_with_row_id.values()
                             if updated_cell.row_id in updated_cell_row_ids
                         }
 
                         # Update the deleted cells to remove any possibly updated cells just determined
                         deleted_cells = {
                             deleted_cell.md5_hex_digest: deleted_cell
-                            for deleted_cell in deleted_cells.values()
+                            for deleted_cell in deleted_cells_with_row_id.values()
                             if deleted_cell.row_id not in updated_cell_row_ids
                         }
 
                         # Before we can set the added cells, we need to remove the updated cells detected above
                         added_cells = {
                             added_cell.md5_hex_digest: added_cell
-                            for added_cell in added_cells.values()
+                            for added_cell in added_cells_with_row_id.values()
                             if added_cell.md5_hex_digest not in updated_cells
                         }
 
@@ -759,18 +718,10 @@ class VersionHistoryParser(VersionParser):
                             # Initialize the carved cells
                             carved_cells = []
 
-                            b_tree_pages_by_number = {
-                                b_tree_page.number: b_tree_page
-                                for b_tree_page in b_tree_pages
-                            }
+                            b_tree_pages_by_number = {b_tree_page.number: b_tree_page for b_tree_page in b_tree_pages}
 
-                            for (
-                                updated_b_tree_page_number
-                            ) in updated_b_tree_page_numbers:
-
-                                page = b_tree_pages_by_number[
-                                    updated_b_tree_page_number
-                                ]
+                            for updated_b_tree_page_number in updated_b_tree_page_numbers:
+                                page = b_tree_pages_by_number[updated_b_tree_page_number]
 
                                 # For carving freeblocks make sure the page is a b-tree page and not overflow
                                 if isinstance(page, BTreePage):
@@ -797,23 +748,16 @@ class VersionHistoryParser(VersionParser):
                             carved_cells = {
                                 carved_cell.md5_hex_digest: carved_cell
                                 for carved_cell in carved_cells
-                                if carved_cell.md5_hex_digest
-                                not in self._carved_cell_md5_hex_digests
+                                if carved_cell.md5_hex_digest not in self._carved_cell_md5_hex_digests
                             }
 
                             # Update the carved cells in the commit object
                             commit.carved_cells.update(carved_cells)
 
                             # Update the carved cell md5 hex digests
-                            self._carved_cell_md5_hex_digests.extend(
-                                [
-                                    cell_md5_hex_digest
-                                    for cell_md5_hex_digest in carved_cells.keys()
-                                ]
-                            )
+                            self._carved_cell_md5_hex_digests.extend(list(carved_cells.keys()))
 
                     elif self._page_type == PAGE_TYPE.B_TREE_INDEX_LEAF:
-
                         # Set the added cells
                         commit.added_cells = added_cells
 
@@ -846,23 +790,16 @@ class VersionHistoryParser(VersionParser):
 
                 # See if we are also
                 if self._carve_freelist_pages:
-
                     freelist_pages_updated = False
 
                     # Check if this is the first version to be investigated
                     if (
-                        self._current_version_number
-                        == self._parser_starting_version_number
-                    ):
-                        freelist_pages_updated = True
-
-                    # Check if the freelist pages were modified in this version
-                    elif version.freelist_pages_modified:
+                        self._current_version_number == self._parser_starting_version_number
+                    ) or version.freelist_pages_modified:
                         freelist_pages_updated = True
 
                     # Carve the freelist pages if any were updated
                     if freelist_pages_updated:
-
                         """
 
                         Note:  We only have to worry about caring the B_TREE_TABLE_LEAF pages right now since this is
@@ -874,37 +811,20 @@ class VersionHistoryParser(VersionParser):
                         """
 
                         if self._page_type == PAGE_TYPE.B_TREE_TABLE_LEAF:
-
                             # Populate the updated freelist pages into a dictionary keyed by page number
                             updated_freelist_pages = {}
                             freelist_trunk_page = version.first_freelist_trunk_page
                             while freelist_trunk_page:
-                                if (
-                                    freelist_trunk_page.number
-                                    in version.updated_page_numbers
-                                ):
-                                    updated_freelist_pages[
-                                        freelist_trunk_page.number
-                                    ] = freelist_trunk_page
-                                for (
-                                    freelist_leaf_page
-                                ) in freelist_trunk_page.freelist_leaf_pages:
-                                    if (
-                                        freelist_leaf_page.number
-                                        in version.updated_page_numbers
-                                    ):
-                                        updated_freelist_pages[
-                                            freelist_leaf_page.number
-                                        ] = freelist_leaf_page
-                                freelist_trunk_page = (
-                                    freelist_trunk_page.next_freelist_trunk_page
-                                )
+                                if freelist_trunk_page.number in version.updated_page_numbers:
+                                    updated_freelist_pages[freelist_trunk_page.number] = freelist_trunk_page
+                                for freelist_leaf_page in freelist_trunk_page.freelist_leaf_pages:
+                                    if freelist_leaf_page.number in version.updated_page_numbers:
+                                        updated_freelist_pages[freelist_leaf_page.number] = freelist_leaf_page
+                                freelist_trunk_page = freelist_trunk_page.next_freelist_trunk_page
 
                             # Update the commit object
                             commit.freelist_pages_carved = True
-                            commit.updated_freelist_page_numbers = (
-                                updated_freelist_pages.keys()
-                            )
+                            commit.updated_freelist_page_numbers = updated_freelist_pages.keys()
 
                             log_message = (
                                 "Carving freelist pages for table master schema entry name: {} "
@@ -929,7 +849,6 @@ class VersionHistoryParser(VersionParser):
                                 freelist_page_number,
                                 freelist_page,
                             ) in updated_freelist_pages.items():
-
                                 # Carve unallocated space
                                 carvings = SignatureCarver.carve_unallocated_space(
                                     version,
@@ -946,20 +865,14 @@ class VersionHistoryParser(VersionParser):
                             carved_cells = {
                                 carved_cell.md5_hex_digest: carved_cell
                                 for carved_cell in carved_cells
-                                if carved_cell.md5_hex_digest
-                                not in self._carved_cell_md5_hex_digests
+                                if carved_cell.md5_hex_digest not in self._carved_cell_md5_hex_digests
                             }
 
                             # Update the carved cells in the commit object
                             commit.carved_cells.update(carved_cells)
 
                             # Update the carved cell md5 hex digests
-                            self._carved_cell_md5_hex_digests.extend(
-                                [
-                                    cell_md5_hex_digest
-                                    for cell_md5_hex_digest in carved_cells.keys()
-                                ]
-                            )
+                            self._carved_cell_md5_hex_digests.extend(list(carved_cells.keys()))
 
                 # Increment the current version number
                 self._current_version_number += 1
@@ -967,8 +880,7 @@ class VersionHistoryParser(VersionParser):
                 # Return the commit object
                 return commit
 
-            else:
-                raise StopIteration()
+            raise StopIteration()
 
 
 class Commit:
@@ -1064,40 +976,15 @@ class Commit:
         )
         if print_cells:
             for added_cell in self.added_cells.values():
-                string += (
-                    "\n"
-                    + padding
-                    + "Added Cell:\n{}".format(added_cell.stringify(padding + "\t"))
-                )
+                string += "\n" + padding + "Added Cell:\n{}".format(added_cell.stringify(padding + "\t"))
             for deleted_cell in self.deleted_cells.values():
-                string += (
-                    "\n"
-                    + padding
-                    + "Deleted Cell:\n{}".format(deleted_cell.stringify(padding + "\t"))
-                )
+                string += "\n" + padding + "Deleted Cell:\n{}".format(deleted_cell.stringify(padding + "\t"))
             for updated_cell in self.updated_cells.values():
-                string += (
-                    "\n"
-                    + padding
-                    + "Updated Cell:\n{}".format(updated_cell.stringify(padding + "\t"))
-                )
+                string += "\n" + padding + "Updated Cell:\n{}".format(updated_cell.stringify(padding + "\t"))
             for carved_cell in self.carved_cells.values():
-                string += (
-                    "\n"
-                    + padding
-                    + "Carved Cell:\n{}".format(carved_cell.stringify(padding + "\t"))
-                )
+                string += "\n" + padding + "Carved Cell:\n{}".format(carved_cell.stringify(padding + "\t"))
         return string
 
     @property
     def updated(self):
-        return (
-            True
-            if (
-                self.added_cells
-                or self.deleted_cells
-                or self.updated_cells
-                or self.carved_cells
-            )
-            else False
-        )
+        return bool(self.added_cells or self.deleted_cells or self.updated_cells or self.carved_cells)

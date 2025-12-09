@@ -22,7 +22,6 @@ RollBackJournalCarver(Carver)
 class RollBackJournalCarver:
     @staticmethod
     def carve(rollback_journal, version, master_schema_entry, signature):
-
         logger = getLogger(LOGGER_NAME)
 
         """
@@ -51,9 +50,7 @@ class RollBackJournalCarver:
         page_record_header_size = 4
         page_record_checksum_size = 4
 
-        page_record_size = (
-            page_record_header_size + page_size + page_record_checksum_size
-        )
+        page_record_size = page_record_header_size + page_size + page_record_checksum_size
 
         # Initialize the carve commits
         carved_commits = []
@@ -63,14 +60,11 @@ class RollBackJournalCarver:
         has_data = True
         offset = sector_size
         while has_data:
-
             page_number = unpack(
                 b">I",
                 rollback_journal.file_handle.read_data(offset, page_record_header_size),
             )[0]
-            page_content = rollback_journal.file_handle.read_data(
-                offset + page_record_header_size, page_size
-            )
+            page_content = rollback_journal.file_handle.read_data(offset + page_record_header_size, page_size)
             page_type = hexlify(page_content[:1])
             page_checksum = hexlify(
                 rollback_journal.file_handle.read_data(
@@ -85,11 +79,8 @@ class RollBackJournalCarver:
             )
 
             if page_type in [b"0d", b"05"]:
-
                 page_type_string = (
-                    PAGE_TYPE.B_TREE_TABLE_LEAF
-                    if page_type == b"0d"
-                    else PAGE_TYPE.B_TREE_TABLE_INTERIOR
+                    PAGE_TYPE.B_TREE_TABLE_LEAF if page_type == b"0d" else PAGE_TYPE.B_TREE_TABLE_INTERIOR
                 )
                 carved_cells = SignatureCarver.carve_unallocated_space(
                     version,
@@ -110,16 +101,13 @@ class RollBackJournalCarver:
                     -1,
                     None,
                 )
-                commit.carved_cells.update(
-                    {cell.md5_hex_digest: cell for cell in carved_cells}
-                )
+                commit.carved_cells.update({cell.md5_hex_digest: cell for cell in carved_cells})
                 carved_commits.append(commit)
 
             offset += page_record_size
 
             # Check if the next page record is a full page record size or not
             if (offset + page_record_size) >= rollback_journal.file_handle.file_size:
-
                 # The page record is cut off since it is goes beyond the end of the file
                 has_data = False
 
@@ -131,23 +119,16 @@ class RollBackJournalCarver:
 
                 """
 
-                page_number = unpack(
-                    b">I", rollback_journal.file_handle.read_data(offset, 4)
-                )[0]
+                page_number = unpack(b">I", rollback_journal.file_handle.read_data(offset, 4))[0]
                 page_content = rollback_journal.file_handle.read_data(
                     offset + page_record_header_size,
-                    rollback_journal.file_handle.file_size
-                    - page_record_header_size
-                    - offset,
+                    rollback_journal.file_handle.file_size - page_record_header_size - offset,
                 )
                 page_type = hexlify(page_content[:1])
 
                 if page_type in [b"0d", b"05"]:
-
                     page_type_string = (
-                        PAGE_TYPE.B_TREE_TABLE_LEAF
-                        if page_type == b"0d"
-                        else PAGE_TYPE.B_TREE_TABLE_INTERIOR
+                        PAGE_TYPE.B_TREE_TABLE_LEAF if page_type == b"0d" else PAGE_TYPE.B_TREE_TABLE_INTERIOR
                     )
                     carved_cells = SignatureCarver.carve_unallocated_space(
                         version,
@@ -168,9 +149,7 @@ class RollBackJournalCarver:
                         -1,
                         None,
                     )
-                    commit.carved_cells.update(
-                        {cell.md5_hex_digest: cell for cell in carved_cells}
-                    )
+                    commit.carved_cells.update({cell.md5_hex_digest: cell for cell in carved_cells})
                     carved_commits.append(commit)
 
         logger.debug("Finished carving table: %s... " % master_schema_entry.name)

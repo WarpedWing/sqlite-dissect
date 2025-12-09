@@ -87,7 +87,7 @@ for commit in table_history_iterator:
     if commit.updated and commit.carved_cells:
         carved_cells = commit.carved_cells
         for carved_cell in carved_cells.itervalues():
-            for column_name in column_name_indices.keys():
+            for column_name in column_name_indices:
                 record_column = carved_cell.payload.record_columns[
                     column_name_indices.get(column_name)
                 ]

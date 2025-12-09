@@ -26,9 +26,7 @@ class Enum(MutableMapping):
         elif isinstance(data, dict):
             self._store = data
         else:
-            log_message = (
-                f"Unable to initialize enumeration for: {data} with type: {type(data)}."
-            )
+            log_message = f"Unable to initialize enumeration for: {data} with type: {type(data)}."
             getLogger(LOGGER_NAME).error(log_message)
             raise ValueError(log_message)
 
@@ -125,9 +123,7 @@ RESERVED_FOR_EXPANSION_REGEX = "^0{40}$"
 FREELIST_NEXT_TRUNK_PAGE_LENGTH = 4
 FREELIST_LEAF_PAGE_POINTERS_LENGTH = 4
 FREELIST_LEAF_PAGE_NUMBER_LENGTH = 4
-FREELIST_HEADER_LENGTH = (
-    FREELIST_NEXT_TRUNK_PAGE_LENGTH + FREELIST_LEAF_PAGE_POINTERS_LENGTH
-)  # ptr+num size
+FREELIST_HEADER_LENGTH = FREELIST_NEXT_TRUNK_PAGE_LENGTH + FREELIST_LEAF_PAGE_POINTERS_LENGTH  # ptr+num size
 LEAF_PAGE_HEADER_LENGTH = 8
 INTERIOR_PAGE_HEADER_LENGTH = 12
 RIGHT_MOST_POINTER_OFFSET = 8
@@ -139,9 +135,7 @@ NEXT_FREEBLOCK_OFFSET_LENGTH = 2
 FREEBLOCK_BYTE_LENGTH = 2
 PAGE_FRAGMENT_LIMIT = 60
 FIRST_OVERFLOW_PAGE_NUMBER_LENGTH = 4
-OVERFLOW_HEADER_LENGTH = (
-    4  # This is the next overflow page number but we call it a header here
-)
+OVERFLOW_HEADER_LENGTH = 4  # This is the next overflow page number but we call it a header here
 POINTER_MAP_ENTRY_LENGTH = 5
 
 PAGE_HEADER_MODULE = "sqlite_dissect.file.database.header"
@@ -173,9 +167,7 @@ CELL_LOCATION = Enum(
     }
 )
 
-CELL_SOURCE = Enum(
-    {"B_TREE": "B-Tree", "DISPARATE_B_TREE": "Disparate B-Tree", "FREELIST": "Freelist"}
-)
+CELL_SOURCE = Enum({"B_TREE": "B-Tree", "DISPARATE_B_TREE": "Disparate B-Tree", "FREELIST": "Freelist"})
 
 BLOB_SIGNATURE_IDENTIFIER = -1
 TEXT_SIGNATURE_IDENTIFIER = -2
@@ -184,12 +176,8 @@ ZERO_BYTE = b"\x00"
 ALL_ZEROS_REGEX = b"^0*$"
 
 SQLITE_MASTER_SCHEMA_ROOT_PAGE = 1
-MASTER_SCHEMA_COLUMN = Enum(
-    {"TYPE": 0, "NAME": 1, "TABLE_NAME": 2, "ROOT_PAGE": 3, "SQL": 4}
-)
-MASTER_SCHEMA_ROW_TYPE = Enum(
-    {"TABLE": "table", "INDEX": "index", "VIEW": "view", "TRIGGER": "trigger"}
-)
+MASTER_SCHEMA_COLUMN = Enum({"TYPE": 0, "NAME": 1, "TABLE_NAME": 2, "ROOT_PAGE": 3, "SQL": 4})
+MASTER_SCHEMA_ROW_TYPE = Enum({"TABLE": "table", "INDEX": "index", "VIEW": "view", "TRIGGER": "trigger"})
 MASTER_SCHEMA_NUMBER_OF_COLUMNS = 5
 
 COLUMN_DEFINITION = Enum(["COLUMN_NAME", "DATA_TYPE_NAME", "COLUMN_CONSTRAINT"])
@@ -242,9 +230,7 @@ INDEX_WHERE_CLAUSE = "WHERE"
 INTERNAL_SCHEMA_OBJECT_PREFIX = "sqlite_"
 INTERNAL_SCHEMA_OBJECT_INDEX_PREFIX = "sqlite_autoindex_"
 
-COLUMN_CONSTRAINT_TYPES = Enum(
-    ["PRIMARY_KEY", "NOT NULL", "UNIQUE", "CHECK", "DEFAULT", "COLLATE", "FOREIGN_KEY"]
-)
+COLUMN_CONSTRAINT_TYPES = Enum(["PRIMARY_KEY", "NOT NULL", "UNIQUE", "CHECK", "DEFAULT", "COLLATE", "FOREIGN_KEY"])
 
 COLUMN_CONSTRAINT_PREFACES = [
     "CONSTRAINT",
@@ -389,7 +375,5 @@ if maxunicode >= 0x10000:
         ]
     )
 
-_illegal_xml_ranges = [
-    f"{chr(low)}-{chr(high)}" for (low, high) in _illegal_xml_characters
-]
+_illegal_xml_ranges = [f"{chr(low)}-{chr(high)}" for (low, high) in _illegal_xml_characters]
 ILLEGAL_XML_CHARACTER_PATTERN = compile("[%s]" % "".join(_illegal_xml_ranges))

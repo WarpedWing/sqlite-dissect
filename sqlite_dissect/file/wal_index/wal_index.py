@@ -18,12 +18,9 @@ WriteAheadLogIndex(object)
 
 class WriteAheadLogIndex:
     def __init__(self, file_name, file_size=None):
-
         logger = getLogger(LOGGER_NAME)
 
-        self._file_handle = FileHandle(
-            FILE_TYPE.WAL_INDEX, file_name, file_size=file_size
-        )
+        self._file_handle = FileHandle(FILE_TYPE.WAL_INDEX, file_name, file_size=file_size)
 
         zero = False
         start = WAL_INDEX_HEADER_LENGTH
@@ -34,9 +31,7 @@ class WriteAheadLogIndex:
                 zero = True
             else:
                 key = (data * 383) & 8191
-                log_message = (
-                    f"Entry {i} at offset: {start} is page #{data} with key of {key}."
-                )
+                log_message = f"Entry {i} at offset: {start} is page #{data} with key of {key}."
                 logger.debug(log_message)
                 start += 4
 

@@ -58,7 +58,6 @@ class CommitConsoleExporter:
         )
 
         if commit.page_type == PAGE_TYPE.B_TREE_INDEX_LEAF:
-
             CommitConsoleExporter._write_cells(
                 commit.file_type,
                 commit.database_text_encoding,
@@ -89,11 +88,8 @@ class CommitConsoleExporter:
             )
 
         elif commit.page_type == PAGE_TYPE.B_TREE_TABLE_LEAF:
-
             # Sort the added, updated, and deleted cells by the row id
-            sorted_added_cells = sorted(
-                commit.added_cells.values(), key=lambda b_tree_cell: b_tree_cell.row_id
-            )
+            sorted_added_cells = sorted(commit.added_cells.values(), key=lambda b_tree_cell: b_tree_cell.row_id)
             CommitConsoleExporter._write_cells(
                 commit.file_type,
                 commit.database_text_encoding,
@@ -134,7 +130,6 @@ class CommitConsoleExporter:
             )
 
         else:
-
             log_message = (
                 "Invalid commit page type: {} found for text export on master "
                 "schema entry name: {} while writing to sqlite file name: {}."
@@ -202,7 +197,6 @@ class CommitTextExporter:
         self._file_handle = None
 
     def __enter__(self):
-
         # Check if the file exists and if it does rename it
         if exists(self._text_file_name):
             # Generate a uuid to append to the file name
@@ -215,9 +209,7 @@ class CommitTextExporter:
                 "File: {} already existing when creating the file for commit text exporting.  The "
                 "file was renamed to: {} and new data will be written to the file name specified."
             )
-            log_message = log_message.format(
-                self._text_file_name, new_file_name_for_existing_file
-            )
+            log_message = log_message.format(self._text_file_name, new_file_name_for_existing_file)
             getLogger(LOGGER_NAME).debug(log_message)
 
         self._file_handle = open(self._text_file_name, "wb")
@@ -267,7 +259,6 @@ class CommitTextExporter:
         )
 
         if commit.page_type == PAGE_TYPE.B_TREE_INDEX_LEAF:
-
             CommitTextExporter._write_cells(
                 self._file_handle,
                 commit.file_type,
@@ -302,11 +293,8 @@ class CommitTextExporter:
             )
 
         elif commit.page_type == PAGE_TYPE.B_TREE_TABLE_LEAF:
-
             # Sort the added, updated, and deleted cells by the row id
-            sorted_added_cells = sorted(
-                commit.added_cells.values(), key=lambda b_tree_cell: b_tree_cell.row_id
-            )
+            sorted_added_cells = sorted(commit.added_cells.values(), key=lambda b_tree_cell: b_tree_cell.row_id)
             CommitTextExporter._write_cells(
                 self._file_handle,
                 commit.file_type,
@@ -351,21 +339,13 @@ class CommitTextExporter:
             )
 
         else:
-
-            log_message = (
-                "Invalid commit page type: {} found for text export on master "
-                "schema entry name: {}."
-            )
-            log_message = log_message.format(
-                commit.page_type, commit.name, self._text_file_name
-            )
+            log_message = "Invalid commit page type: {} found for text export on master schema entry name: {}."
+            log_message = log_message.format(commit.page_type, commit.name, self._text_file_name)
             logger.warning(log_message)
             raise ExportError(log_message)
 
     @staticmethod
-    def _write_cells(
-        file_handle, file_type, database_text_encoding, page_type, cells, operation
-    ):
+    def _write_cells(file_handle, file_type, database_text_encoding, page_type, cells, operation):
         """
 
         This function will write the list of cells sent in to the connection under the table name specified including

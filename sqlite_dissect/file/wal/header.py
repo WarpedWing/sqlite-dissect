@@ -29,18 +29,13 @@ WriteAheadLogFrameHeader(object)
 
 class WriteAheadLogHeader(SQLiteHeader):
     def __init__(self, wal_header_byte_array):
-
         super().__init__()
 
         logger = getLogger(LOGGER_NAME)
 
         if len(wal_header_byte_array) != WAL_HEADER_LENGTH:
-            log_message = (
-                "The wal header byte array of size: {} is not the expected size of: {}."
-            )
-            log_message = log_message.format(
-                len(wal_header_byte_array), WAL_HEADER_LENGTH
-            )
+            log_message = "The wal header byte array of size: {} is not the expected size of: {}."
+            log_message = log_message.format(len(wal_header_byte_array), WAL_HEADER_LENGTH)
             logger.error(log_message)
             raise ValueError(log_message)
 
@@ -64,9 +59,7 @@ class WriteAheadLogHeader(SQLiteHeader):
 
         if self.file_format_version != WAL_FILE_FORMAT_VERSION:
             log_message = "An unsupported file format version was found: {} instead of the expected value: {}."
-            log_message = log_message.format(
-                self.file_format_version, WAL_FILE_FORMAT_VERSION
-            )
+            log_message = log_message.format(self.file_format_version, WAL_FILE_FORMAT_VERSION)
             logger.error(log_message)
             raise HeaderParsingError(log_message)
 
@@ -122,14 +115,11 @@ class WriteAheadLogHeader(SQLiteHeader):
 
 class WriteAheadLogFrameHeader:
     def __init__(self, wal_frame_header_byte_array):
-
         logger = getLogger(LOGGER_NAME)
 
         if len(wal_frame_header_byte_array) != WAL_FRAME_HEADER_LENGTH:
             log_message = "The wal frame header byte array of size: {} is not the expected size of: {}."
-            log_message = log_message.format(
-                len(wal_frame_header_byte_array), WAL_FRAME_HEADER_LENGTH
-            )
+            log_message = log_message.format(len(wal_frame_header_byte_array), WAL_FRAME_HEADER_LENGTH)
             logger.error(log_message)
             raise ValueError(log_message)
 

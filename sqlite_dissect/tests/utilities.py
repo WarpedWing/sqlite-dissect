@@ -47,16 +47,11 @@ def parse_rows(row_string):
     commas = find_breakpoints(row_string)
 
     row_dict = {}
-    row_list = [
-        row_string[i:j].strip()
-        for i, j in zip([0] + [index + 1 for index in commas], commas + [None])
-    ]
+    row_list = [row_string[i:j].strip() for i, j in zip([0] + [index + 1 for index in commas], commas + [None])]
 
     for row in row_list:
         spaces = find_breakpoints(row, delim=" ")
-        row_dict[strip_one(row[: spaces[0]], "['\"]").lstrip("[ ").rstrip("] ")] = row[
-            spaces[0] :
-        ].strip()
+        row_dict[strip_one(row[: spaces[0]], "['\"]").lstrip("[ ").rstrip("] ")] = row[spaces[0] :].strip()
 
     return row_dict
 
@@ -76,11 +71,7 @@ def get_index_of_closing_parenthesis(s: str, opening_parenthesis_offset=0):
         if in_quotes and character == in_quotes:
             in_quotes = None
 
-        elif (
-            in_block_comment
-            and character == block_comment_term[0]
-            and s[index : index + 2] == block_comment_term
-        ):
+        elif in_block_comment and character == block_comment_term[0] and s[index : index + 2] == block_comment_term:
             in_block_comment = False
 
         elif in_line_comment and character == line_comment_term:
@@ -90,16 +81,10 @@ def get_index_of_closing_parenthesis(s: str, opening_parenthesis_offset=0):
             if character in quote_chars:
                 in_quotes = character
 
-            elif (
-                character == block_comment_chars[0]
-                and s[index : index + 2] == block_comment_chars
-            ):
+            elif character == block_comment_chars[0] and s[index : index + 2] == block_comment_chars:
                 in_block_comment = True
 
-            elif (
-                character == line_comment_chars[0]
-                and s[index : index + 2] == line_comment_chars
-            ):
+            elif character == line_comment_chars[0] and s[index : index + 2] == line_comment_chars:
                 in_line_comment = True
 
             elif character == ")":
@@ -115,9 +100,7 @@ def parse_schema(stdout):
     while stdout:
         # Find the next table entry
         stdout = stdout[stdout.find("type: table") :]
-        table_name = stdout[
-            stdout.find("CREATE TABLE '") + 14 : stdout.find("' ")
-        ].strip()
+        table_name = stdout[stdout.find("CREATE TABLE '") + 14 : stdout.find("' ")].strip()
 
         if table_name:
             stdout = stdout[stdout.find("sql:") + 4 :]
@@ -131,17 +114,13 @@ def parse_schema(stdout):
 
                 elif stdout[index] == "(" and not in_quotes:
                     next_parenthesis = index
-                    closing_parenthesis = get_index_of_closing_parenthesis(
-                        stdout, next_parenthesis
-                    )
+                    closing_parenthesis = get_index_of_closing_parenthesis(stdout, next_parenthesis)
                     closing_parenthesis_found = True
 
                 index += 1
 
             # Fetches lines with columns in them
-            schema_statement = stdout[
-                next_parenthesis + 1 : closing_parenthesis
-            ].strip()
+            schema_statement = stdout[next_parenthesis + 1 : closing_parenthesis].strip()
             tables[table_name] = parse_rows(schema_statement)
 
         stdout = stdout[closing_parenthesis + 1 :]
@@ -162,12 +141,7 @@ def decode_varint(byte_array, offset: int = 0):
     varint_relative_offset = 0
 
     for x in range(1, 10):
-
-        varint_byte = ord(
-            byte_array[
-                offset + varint_relative_offset : offset + varint_relative_offset + 1
-            ]
-        )
+        varint_byte = ord(byte_array[offset + varint_relative_offset : offset + varint_relative_offset + 1])
         varint_relative_offset += 1
 
         if x == 9:
@@ -179,8 +153,7 @@ def decode_varint(byte_array, offset: int = 0):
             unsigned_integer_value |= varint_byte
             if msb_set == 0:
                 break
-            else:
-                unsigned_integer_value <<= 7
+            unsigned_integer_value <<= 7
 
     signed_integer_value = unsigned_integer_value
     if signed_integer_value & 0x80000000 << 32:
@@ -263,9 +236,7 @@ def generate_int():
 
 
 def generate_string():
-    return "".join(
-        [random.choice(string.ascii_letters) for _ in range(random.randint(1, 15))]
-    )
+    return "".join([random.choice(string.ascii_letters) for _ in range(random.randint(1, 15))])
 
 
 def generate_float():
@@ -332,19 +303,13 @@ def db_file(request, tmp_path):
         cursor.execute("PRAGMA encoding = '%s'" % (request.param["encoding"]))
         cursor.execute("PRAGMA page_size = %s" % (request.param["page_size"]))
 
-        cursor.execute(
-            generate_create_statement(
-                request.param["table_name"], request.param["columns"]
-            )
-        )
+        cursor.execute(generate_create_statement(request.param["table_name"], request.param["columns"]))
 
         row_list = []
         if request.param["create"] > 0:
             row_list = generate_rows(request.param["create"], request.param["columns"])
 
-            insert_statement = generate_insert_statement(
-                request.param["table_name"], len(request.param["columns"])
-            )
+            insert_statement = generate_insert_statement(request.param["table_name"], len(request.param["columns"]))
             cursor.executemany(insert_statement, row_list)
             db.commit()
             cursor.execute("PRAGMA wal_checkpoint")
@@ -357,12 +322,7 @@ def db_file(request, tmp_path):
         )
 
         if request.param["modify"] > 0:
-            row_values = [
-                row[1:]
-                for row in generate_rows(
-                    request.param["modify"], request.param["columns"]
-                )
-            ]
+            row_values = [row[1:] for row in generate_rows(request.param["modify"], request.param["columns"])]
             map(
                 lambda row_values, id_for_mod: row_values.append(id_for_mod),
                 row_values,
@@ -372,9 +332,7 @@ def db_file(request, tmp_path):
                 cursor.execute("SELECT * FROM testing WHERE id=?", (row_id,))
                 modified_rows.append(cursor.fetchone())
 
-            update_statement = generate_update_statement(
-                request.param["table_name"], request.param["columns"]
-            )
+            update_statement = generate_update_statement(request.param["table_name"], request.param["columns"])
             cursor.executemany(update_statement, row_list)
             db.commit()
 
@@ -383,9 +341,7 @@ def db_file(request, tmp_path):
                 cursor.execute("SELECT * FROM testing WHERE id=?", (row_id,))
                 deleted_rows.append(cursor.fetchone())
 
-            cursor.executemany(
-                "DELETE FROM testing WHERE id=?", [[row_id] for row_id in id_for_del]
-            )
+            cursor.executemany("DELETE FROM testing WHERE id=?", [[row_id] for row_id in id_for_del])
             db.commit()
 
     if "SFT-01" in request.param["name"] or request.param["journal_mode"] != "WAL":
@@ -401,8 +357,7 @@ def parse_csv(filepath, operations, first_key="id"):
         key_line = csv_file.readline().strip()
         commas = find_breakpoints(key_line)
         keys = [
-            strip_one(key_line[i:j], "['\"]")
-            for i, j in zip([0] + [index + 1 for index in commas], commas + [None])
+            strip_one(key_line[i:j], "['\"]") for i, j in zip([0] + [index + 1 for index in commas], commas + [None])
         ]
         op_index = keys.index("Operation")
         first_index = keys.index(first_key)

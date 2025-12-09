@@ -34,10 +34,8 @@ class CommitXlsxExporter:
         self._long_sheet_name_translation_dictionary = {}
 
     def __enter__(self):
-
         # Check if the file exists and if it does rename it
         if exists(self._xlsx_file_name):
-
             # Generate a uuid to append to the file name
             new_file_name_for_existing_file = self._xlsx_file_name + "-" + str(uuid4())
 
@@ -48,9 +46,7 @@ class CommitXlsxExporter:
                 "File: {} already existing when creating the file for commit xlsx exporting.  The "
                 "file was renamed to: {} and new data will be written to the file name specified."
             )
-            log_message = log_message.format(
-                self._xlsx_file_name, new_file_name_for_existing_file
-            )
+            log_message = log_message.format(self._xlsx_file_name, new_file_name_for_existing_file)
             getLogger(LOGGER_NAME).debug(log_message)
 
         return self
@@ -106,32 +102,22 @@ class CommitXlsxExporter:
 
         # Check if the sheet name is greater than 31 characters
         if len(sheet_name) > 31:
-
             # Check if the sheet name is already in the dictionary
             if sheet_name in self._long_sheet_name_translation_dictionary:
-
                 # Set it to the name already made for it from a previous call
                 sheet_name = self._long_sheet_name_translation_dictionary[sheet_name]
 
             # The sheet name was not already in the dictionary so we need to make a new name
             else:
-
                 # Continue while we are between 0 and 9
                 while name_postfix_increment < 10:
-
                     # Create the truncated sheet name from the first 30 characters of the sheet name and name postfix
                     truncated_sheet_name = sheet_name[:30] + str(name_postfix_increment)
 
                     # CHeck if the name does not already exist in the dictionary
-                    if (
-                        truncated_sheet_name
-                        not in self._long_sheet_name_translation_dictionary
-                    ):
-
+                    if truncated_sheet_name not in self._long_sheet_name_translation_dictionary:
                         # Add the sheet name and truncated sheet name into the dictionary
-                        self._long_sheet_name_translation_dictionary[sheet_name] = (
-                            truncated_sheet_name
-                        )
+                        self._long_sheet_name_translation_dictionary[sheet_name] = truncated_sheet_name
 
                         # Set the sheet name
                         sheet_name = truncated_sheet_name
@@ -141,19 +127,16 @@ class CommitXlsxExporter:
                             "Commit name: {} was truncated to: {} since it had a length of {} characters "
                             "which is greater than the 31 allowed characters for a sheet name."
                         )
-                        log_message = log_message.format(
-                            commit.name, sheet_name, len(commit.name)
-                        )
+                        log_message = log_message.format(commit.name, sheet_name, len(commit.name))
                         logger.debug(log_message)
 
                         # Break from the while loop
                         break
 
                     # The name already exists
-                    else:
 
-                        # Increment the name postfix counter
-                        name_postfix_increment += 1
+                    # Increment the name postfix counter
+                    name_postfix_increment += 1
 
                 # Raise an exception if the name postfix increment counter reached 10
                 if name_postfix_increment == 10:
@@ -213,7 +196,6 @@ class CommitXlsxExporter:
             )
 
         if commit.page_type == PAGE_TYPE.B_TREE_INDEX_LEAF:
-
             """
 
             Note:  The index master schema entries are currently not fully parsed and therefore we do not have
@@ -257,21 +239,15 @@ class CommitXlsxExporter:
             )
 
         elif commit.page_type == PAGE_TYPE.B_TREE_TABLE_LEAF:
-
             if write_headers:
                 column_headers.append("Row ID")
                 column_headers.extend(
-                    [
-                        column_definition.column_name
-                        for column_definition in master_schema_entry.column_definitions
-                    ]
+                    [column_definition.column_name for column_definition in master_schema_entry.column_definitions]
                 )
                 sheet.append(column_headers)
 
             # Sort the added, updated, and deleted cells by the row id
-            sorted_added_cells = sorted(
-                commit.added_cells.values(), key=lambda b_tree_cell: b_tree_cell.row_id
-            )
+            sorted_added_cells = sorted(commit.added_cells.values(), key=lambda b_tree_cell: b_tree_cell.row_id)
             CommitXlsxExporter._write_cells(
                 sheet,
                 commit.file_type,
@@ -316,21 +292,16 @@ class CommitXlsxExporter:
             )
 
         else:
-
             log_message = (
                 "Invalid commit page type: {} found for xlsx export on master "
                 "schema entry name: {} while writing to xlsx file name: {}."
             )
-            log_message = log_message.format(
-                commit.page_type, commit.name, self._xlsx_file_name
-            )
+            log_message = log_message.format(commit.page_type, commit.name, self._xlsx_file_name)
             logger.warning(log_message)
             raise ExportError(log_message)
 
     @staticmethod
-    def _write_cells(
-        sheet, file_type, database_text_encoding, page_type, cells, operation
-    ):
+    def _write_cells(sheet, file_type, database_text_encoding, page_type, cells, operation):
         """
 
         This function will write the list of cells sent in to the sheet specified including the metadata regarding
@@ -408,19 +379,13 @@ class CommitXlsxExporter:
             cell_record_column_values = []
             for record_column in cell.payload.record_columns:
                 serial_type = record_column.serial_type
-                text_affinity = (
-                    True if serial_type >= 13 and serial_type % 2 == 1 else False
-                )
+                text_affinity = True if serial_type >= 13 and serial_type % 2 == 1 else False
                 value = record_column.value
                 if isinstance(value, (bytes, bytearray, str)):
                     if len(value) == 0 and isinstance(value, bytearray):
                         value = None
                     else:
-                        value = (
-                            value.decode(database_text_encoding, "replace")
-                            if text_affinity
-                            else str(value)
-                        )
+                        value = value.decode(database_text_encoding, "replace") if text_affinity else str(value)
                         try:
                             value.encode(UTF_8)
                         except UnicodeDecodeError:

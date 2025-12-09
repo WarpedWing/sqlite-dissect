@@ -21,7 +21,6 @@ SQLiteHeader(object)
 
 
 class SQLiteHeader:
-
     __metaclass__ = ABCMeta
 
     def __init__(self):
@@ -36,8 +35,6 @@ class SQLiteHeader:
 
     @abstractmethod
     def stringify(self, padding=""):
-        log_message = (
-            "The abstract method stringify was called directly and is not implemented."
-        )
+        log_message = "The abstract method stringify was called directly and is not implemented."
         getLogger(LOGGER_NAME).error(log_message)
         raise NotImplementedError(log_message)

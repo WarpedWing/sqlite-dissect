@@ -28,9 +28,7 @@ get_pages_from_b_tree_page(b_tree_page)
 """
 
 
-def aggregate_leaf_cells(
-    b_tree_page, accounted_for_cell_md5s=None, payloads_only=False
-):
+def aggregate_leaf_cells(b_tree_page, accounted_for_cell_md5s=None, payloads_only=False):
     """
 
     This function will parse through all records across all leaf pages in a b-tree recursively and return a total
@@ -59,15 +57,12 @@ def aggregate_leaf_cells(
 
     """
 
-    accounted_for_cell_md5s = (
-        set() if accounted_for_cell_md5s is None else accounted_for_cell_md5s
-    )
+    accounted_for_cell_md5s = set() if accounted_for_cell_md5s is None else accounted_for_cell_md5s
 
     number_of_cells = 0
     cells = {}
 
     if isinstance(b_tree_page, TableLeafPage) or isinstance(b_tree_page, IndexLeafPage):
-
         number_of_cells += len(b_tree_page.cells)
 
         if payloads_only:
@@ -81,35 +76,24 @@ def aggregate_leaf_cells(
                     accounted_for_cell_md5s.add(cell.md5_hex_digest)
                     cells[cell.md5_hex_digest] = cell
 
-    elif isinstance(b_tree_page, TableInteriorPage) or isinstance(
-        b_tree_page, IndexInteriorPage
-    ):
-
+    elif isinstance(b_tree_page, TableInteriorPage) or isinstance(b_tree_page, IndexInteriorPage):
         (
             right_most_page_number_of_records,
             right_most_page_records,
-        ) = aggregate_leaf_cells(
-            b_tree_page.right_most_page, accounted_for_cell_md5s, payloads_only
-        )
+        ) = aggregate_leaf_cells(b_tree_page.right_most_page, accounted_for_cell_md5s, payloads_only)
         number_of_cells += right_most_page_number_of_records
         cells.update(right_most_page_records)
 
         for cell in b_tree_page.cells:
-
             (
                 left_child_page_number_of_records,
                 left_child_page_records,
-            ) = aggregate_leaf_cells(
-                cell.left_child_page, accounted_for_cell_md5s, payloads_only
-            )
+            ) = aggregate_leaf_cells(cell.left_child_page, accounted_for_cell_md5s, payloads_only)
             number_of_cells += left_child_page_number_of_records
             cells.update(left_child_page_records)
 
     else:
-
-        log_message = (
-            f"Invalid page type found: {type(b_tree_page)} to aggregate cells on."
-        )
+        log_message = f"Invalid page type found: {type(b_tree_page)} to aggregate cells on."
         getLogger(LOGGER_NAME).error(log_message)
         raise ValueError(log_message)
 
@@ -150,26 +134,16 @@ def create_pointer_map_pages(version, database_size_in_pages, page_size):
     pointer_map_page_number = 2
     number_of_pointer_map_pages = 0
     while pointer_map_page_number < database_size_in_pages:
-
         number_of_pointer_map_pages += 1
         entries = number_of_pointer_map_pages * maximum_entries_per_page
         next_pointer_map_page_number = entries + 2 + number_of_pointer_map_pages
 
         number_of_entries = maximum_entries_per_page
         if next_pointer_map_page_number > database_size_in_pages:
-            previous_entries = (
-                number_of_pointer_map_pages - 1
-            ) * maximum_entries_per_page
-            number_of_entries = (
-                database_size_in_pages
-                - previous_entries
-                - number_of_pointer_map_pages
-                - 1
-            )
+            previous_entries = (number_of_pointer_map_pages - 1) * maximum_entries_per_page
+            number_of_entries = database_size_in_pages - previous_entries - number_of_pointer_map_pages - 1
 
-        pointer_map_pages.append(
-            PointerMapPage(version, pointer_map_page_number, number_of_entries)
-        )
+        pointer_map_pages.append(PointerMapPage(version, pointer_map_page_number, number_of_entries))
         pointer_map_page_number = next_pointer_map_page_number
 
         if pointer_map_page_number == database_size_in_pages:
@@ -177,9 +151,7 @@ def create_pointer_map_pages(version, database_size_in_pages, page_size):
                 "The next pointer map page number: {} is equal to the database size in pages: {} "
                 "for version: {} resulting in erroneous pointer map pages."
             )
-            log_message = log_message.format(
-                pointer_map_page_number, database_size_in_pages, version.version_number
-            )
+            log_message = log_message.format(pointer_map_page_number, database_size_in_pages, version.version_number)
             logger.error(log_message)
             raise ParsingError(log_message)
 
@@ -204,9 +176,7 @@ def create_pointer_map_pages(version, database_size_in_pages, page_size):
             "The calculated number of database pages from the pointer map pages: {} does not equal the "
             "database size in pages: {} for version: {}."
         )
-        log_message = log_message.format(
-            calculated_database_pages, database_size_in_pages, version.version_number
-        )
+        log_message = log_message.format(calculated_database_pages, database_size_in_pages, version.version_number)
         logger.error(log_message)
         raise ParsingError(log_message)
 
@@ -218,7 +188,6 @@ def get_maximum_pointer_map_entries_per_page(page_size):
 
 
 def get_page_numbers_and_types_from_b_tree_page(b_tree_page):
-
     logger = getLogger(LOGGER_NAME)
 
     b_tree_page_numbers = {}
@@ -229,22 +198,14 @@ def get_page_numbers_and_types_from_b_tree_page(b_tree_page):
         b_tree_page_numbers[b_tree_page.number] = PAGE_TYPE.B_TREE_INDEX_LEAF
     elif isinstance(b_tree_page, TableInteriorPage):
         b_tree_page_numbers[b_tree_page.number] = PAGE_TYPE.B_TREE_TABLE_INTERIOR
-        b_tree_page_numbers.update(
-            get_page_numbers_and_types_from_b_tree_page(b_tree_page.right_most_page)
-        )
+        b_tree_page_numbers.update(get_page_numbers_and_types_from_b_tree_page(b_tree_page.right_most_page))
         for b_tree_cell in b_tree_page.cells:
-            b_tree_page_numbers.update(
-                get_page_numbers_and_types_from_b_tree_page(b_tree_cell.left_child_page)
-            )
+            b_tree_page_numbers.update(get_page_numbers_and_types_from_b_tree_page(b_tree_cell.left_child_page))
     elif isinstance(b_tree_page, IndexInteriorPage):
         b_tree_page_numbers[b_tree_page.number] = PAGE_TYPE.B_TREE_INDEX_INTERIOR
-        b_tree_page_numbers.update(
-            get_page_numbers_and_types_from_b_tree_page(b_tree_page.right_most_page)
-        )
+        b_tree_page_numbers.update(get_page_numbers_and_types_from_b_tree_page(b_tree_page.right_most_page))
         for b_tree_cell in b_tree_page.cells:
-            b_tree_page_numbers.update(
-                get_page_numbers_and_types_from_b_tree_page(b_tree_cell.left_child_page)
-            )
+            b_tree_page_numbers.update(get_page_numbers_and_types_from_b_tree_page(b_tree_cell.left_child_page))
     else:
         log_message = "The b-tree page is not a BTreePage object but has a type of: {}."
         log_message = log_message.format(type(b_tree_page))
@@ -257,9 +218,7 @@ def get_page_numbers_and_types_from_b_tree_page(b_tree_page):
                 overflow_page = cell.overflow_pages[cell.overflow_page_number]
                 b_tree_page_numbers[overflow_page.number] = PAGE_TYPE.OVERFLOW
                 while overflow_page.next_overflow_page_number:
-                    overflow_page = cell.overflow_pages[
-                        overflow_page.next_overflow_page_number
-                    ]
+                    overflow_page = cell.overflow_pages[overflow_page.next_overflow_page_number]
                     b_tree_page_numbers[overflow_page.number] = PAGE_TYPE.OVERFLOW
 
     return b_tree_page_numbers
@@ -284,9 +243,7 @@ def get_pages_from_b_tree_page(b_tree_page):
 
     if isinstance(b_tree_page, TableLeafPage) or isinstance(b_tree_page, IndexLeafPage):
         b_tree_pages.append(b_tree_page)
-    elif isinstance(b_tree_page, TableInteriorPage) or isinstance(
-        b_tree_page, IndexInteriorPage
-    ):
+    elif isinstance(b_tree_page, TableInteriorPage) or isinstance(b_tree_page, IndexInteriorPage):
         b_tree_pages.append(b_tree_page)
         b_tree_pages.extend(get_pages_from_b_tree_page(b_tree_page.right_most_page))
         for b_tree_cell in b_tree_page.cells:
@@ -303,9 +260,7 @@ def get_pages_from_b_tree_page(b_tree_page):
                 overflow_page = cell.overflow_pages[cell.overflow_page_number]
                 b_tree_pages.append(overflow_page)
                 while overflow_page.next_overflow_page_number:
-                    overflow_page = cell.overflow_pages[
-                        overflow_page.next_overflow_page_number
-                    ]
+                    overflow_page = cell.overflow_pages[overflow_page.next_overflow_page_number]
                     b_tree_pages.append(overflow_page)
 
     return b_tree_pages

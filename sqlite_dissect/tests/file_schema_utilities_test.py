@@ -23,9 +23,7 @@ get_index_of_closing_parenthesis_params = [
 ]
 
 
-@pytest.mark.parametrize(
-    "input_str, offset, expected_index", get_index_of_closing_parenthesis_params
-)
+@pytest.mark.parametrize("input_str, offset, expected_index", get_index_of_closing_parenthesis_params)
 def test_get_index_of_closing_parenthesis(input_str, offset, expected_index):
     # expected_index of -1 will signal ValueError to test finding a non-parenthesis character at offset.
     if expected_index == -1:
@@ -52,9 +50,7 @@ parse_comment_from_sql_segment_params = [
 ]
 
 
-@pytest.mark.parametrize(
-    "input_str, expected_return", parse_comment_from_sql_segment_params
-)
+@pytest.mark.parametrize("input_str, expected_return", parse_comment_from_sql_segment_params)
 def test_parse_comment_from_sql_segment(input_str, expected_return):
     # expected_return of -1 will signal MasterSchemaParsingError to test finding a character that isn't a comment
     # identifier at beginning of string.

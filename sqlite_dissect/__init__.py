@@ -29,12 +29,10 @@ from sqlite_dissect.interface import *
 
 def null_logger():
     try:
-
         # Import the NullHandler from the logging package
         from logging import NullHandler
 
     except ImportError:
-
         # Make our own if an error occurring while importing
         class NullHandler(logging.Handler):
             def emit(self, record):

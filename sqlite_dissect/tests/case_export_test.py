@@ -1,7 +1,6 @@
 import os
 import unittest
-from os import mkdir
-from os.path import abspath, dirname, isdir, join
+from os.path import abspath, dirname, join
 
 from sqlite_dissect.entrypoint import main
 from sqlite_dissect.tests.constants import DB_FILES

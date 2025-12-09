@@ -25,7 +25,6 @@ VersionParser(object)
 
 
 class VersionParser:
-
     __metaclass__ = ABCMeta
 
     def __init__(
@@ -120,8 +119,7 @@ class VersionParser:
         """
 
         if ending_version_number is not None and (
-            ending_version_number >= number_of_versions
-            or ending_version_number <= version_number
+            ending_version_number >= number_of_versions or ending_version_number <= version_number
         ):
             log_message = (
                 "Invalid ending version number: {} with {} number of versions with version number: {} for "
@@ -144,13 +142,9 @@ class VersionParser:
         self.version_number = version_number
         self.ending_version_number = ending_version_number
 
-        self.parser_starting_version_number = (
-            version_number if version_number is not None else BASE_VERSION_NUMBER
-        )
+        self.parser_starting_version_number = version_number if version_number is not None else BASE_VERSION_NUMBER
         self.parser_ending_version_number = (
-            ending_version_number
-            if ending_version_number is not None
-            else number_of_versions - 1
+            ending_version_number if ending_version_number is not None else number_of_versions - 1
         )
 
         """
@@ -204,10 +198,7 @@ class VersionParser:
             logger.warning(log_message)
             warn(log_message, RuntimeWarning)
 
-        elif (
-            isinstance(master_schema_entry, OrdinaryTableRow)
-            and master_schema_entry.without_row_id
-        ):
+        elif isinstance(master_schema_entry, OrdinaryTableRow) and master_schema_entry.without_row_id:
             log_message = (
                 'A "without rowid" table row type was found for the version parser which is not '
                 "supported for master schema entry root page number: {} row type: {} name: {} "
@@ -244,9 +235,7 @@ class VersionParser:
         self.root_page_number_version_index = {}
 
         # Get the md5_hash_identifier from the master schema entry
-        self.master_schema_entry_md5_hash_identifier = (
-            master_schema_entry.md5_hash_identifier
-        )
+        self.master_schema_entry_md5_hash_identifier = master_schema_entry.md5_hash_identifier
 
         """
 
@@ -261,10 +250,7 @@ class VersionParser:
         versions = version_history.versions
         starting_version_number = None
         ending_version_number = None
-        for version_number in range(
-            self.parser_starting_version_number, self.parser_ending_version_number + 1
-        ):
-
+        for version_number in range(self.parser_starting_version_number, self.parser_ending_version_number + 1):
             version = versions[version_number]
 
             if version.master_schema_modified:
@@ -291,14 +277,10 @@ class VersionParser:
                 raise VersionParsingError(log_message)
 
             entries = master_schema.master_schema_entries
-            entries_dictionary = dict(
-                map(lambda entry: [entry.md5_hash_identifier, entry], entries)
-            )
+            entries_dictionary = dict(map(lambda entry: [entry.md5_hash_identifier, entry], entries))
 
             if self.master_schema_entry_md5_hash_identifier in entries_dictionary:
-
                 if ending_version_number is None:
-
                     if starting_version_number is not None:
                         log_message = (
                             "The starting version number was set already when it should not have been "
@@ -335,12 +317,8 @@ class VersionParser:
                         raise VersionParsingError(log_message)
 
                     # Add the first version number and b-tree root page number into the root page number version index
-                    root_page_number = entries_dictionary[
-                        self.master_schema_entry_md5_hash_identifier
-                    ].root_page_number
-                    self.root_page_number_version_index[version_number] = (
-                        root_page_number
-                    )
+                    root_page_number = entries_dictionary[self.master_schema_entry_md5_hash_identifier].root_page_number
+                    self.root_page_number_version_index[version_number] = root_page_number
 
                 elif ending_version_number == version_number - 1:
                     ending_version_number = version_number
@@ -362,12 +340,8 @@ class VersionParser:
                         raise VersionParsingError(log_message)
 
                     # Add the version number and b-tree root page number into the root page number version index
-                    root_page_number = entries_dictionary[
-                        self.master_schema_entry_md5_hash_identifier
-                    ].root_page_number
-                    self.root_page_number_version_index[version_number] = (
-                        root_page_number
-                    )
+                    root_page_number = entries_dictionary[self.master_schema_entry_md5_hash_identifier].root_page_number
+                    self.root_page_number_version_index[version_number] = root_page_number
 
                 else:
                     log_message = (

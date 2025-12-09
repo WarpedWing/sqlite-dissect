@@ -46,14 +46,12 @@ def get_page_breakdown(pages):
 
 
 def get_pointer_map_entries_breakdown(version):
-
     pointer_map_entries_breakdown = []
 
     if not version.pointer_map_pages:
         return pointer_map_entries_breakdown
 
     for pointer_map_page in version.pointer_map_pages:
-
         if not pointer_map_page.pointer_map_entries:
             log_message = "No pointer map entries found for pointer map page: {} with page version: {} in version: {}."
             log_message = log_message.format(
@@ -68,9 +66,7 @@ def get_pointer_map_entries_breakdown(version):
         last_page_number = pointer_map_page.number + 1
         last_entry = None
         for entry in pointer_map_page.pointer_map_entries:
-            if hexlify(str.encode(last_type_seen)) != hexlify(
-                str.encode(entry.page_type)
-            ):
+            if hexlify(str.encode(last_type_seen)) != hexlify(str.encode(entry.page_type)):
                 pages = entry.page_number - last_page_number
                 breakdown = (
                     pointer_map_page.number,
@@ -97,15 +93,10 @@ def get_pointer_map_entries_breakdown(version):
 
 
 def stringify_b_tree(version_interface, b_tree_root_page, padding=""):
-
     string = ""
 
     if isinstance(b_tree_root_page, TableLeafPage):
-        string += (
-            "\n"
-            + padding
-            + "B-Tree Table Leaf Page -> {}: page version {} at offset {} with {} cells"
-        )
+        string += "\n" + padding + "B-Tree Table Leaf Page -> {}: page version {} at offset {} with {} cells"
         string = string.format(
             b_tree_root_page.number,
             version_interface.get_page_version(b_tree_root_page.number),
@@ -113,11 +104,7 @@ def stringify_b_tree(version_interface, b_tree_root_page, padding=""):
             len(b_tree_root_page.cells),
         )
     elif isinstance(b_tree_root_page, IndexLeafPage):
-        string += (
-            "\n"
-            + padding
-            + "B-Tree Index Leaf Page -> {}: page version {} at offset {} with {} cells"
-        )
+        string += "\n" + padding + "B-Tree Index Leaf Page -> {}: page version {} at offset {} with {} cells"
         string = string.format(
             b_tree_root_page.number,
             version_interface.get_page_version(b_tree_root_page.number),
@@ -125,48 +112,30 @@ def stringify_b_tree(version_interface, b_tree_root_page, padding=""):
             len(b_tree_root_page.cells),
         )
     elif isinstance(b_tree_root_page, TableInteriorPage):
-        string += (
-            "\n"
-            + padding
-            + "B-Tree Table Interior Page -> {}: page version {} at offset {} with {} cells"
-        )
+        string += "\n" + padding + "B-Tree Table Interior Page -> {}: page version {} at offset {} with {} cells"
         string = string.format(
             b_tree_root_page.number,
             version_interface.get_page_version(b_tree_root_page.number),
             b_tree_root_page.offset,
             len(b_tree_root_page.cells),
         )
-        string += stringify_b_tree(
-            version_interface, b_tree_root_page.right_most_page, padding + "\t"
-        )
+        string += stringify_b_tree(version_interface, b_tree_root_page.right_most_page, padding + "\t")
         for b_tree_interior_cell in b_tree_root_page.cells:
-            string += stringify_b_tree(
-                version_interface, b_tree_interior_cell.left_child_page, padding + "\t"
-            )
+            string += stringify_b_tree(version_interface, b_tree_interior_cell.left_child_page, padding + "\t")
     elif isinstance(b_tree_root_page, IndexInteriorPage):
-        string += (
-            "\n"
-            + padding
-            + "B-Tree Index Interior Page -> {}: page version {} at offset {} with {} cells"
-        )
+        string += "\n" + padding + "B-Tree Index Interior Page -> {}: page version {} at offset {} with {} cells"
         string = string.format(
             b_tree_root_page.number,
             version_interface.get_page_version(b_tree_root_page.number),
             b_tree_root_page.offset,
             len(b_tree_root_page.cells),
         )
-        string += stringify_b_tree(
-            version_interface, b_tree_root_page.right_most_page, padding + "\t"
-        )
+        string += stringify_b_tree(version_interface, b_tree_root_page.right_most_page, padding + "\t")
         for b_tree_interior_cell in b_tree_root_page.cells:
-            string += stringify_b_tree(
-                version_interface, b_tree_interior_cell.left_child_page, padding + "\t"
-            )
+            string += stringify_b_tree(version_interface, b_tree_interior_cell.left_child_page, padding + "\t")
     else:
         log_message = "The b-tree root page is not a b-tree root page type but instead: {} in version: {}."
-        log_message = log_message.format(
-            b_tree_root_page.page_type, version_interface.number
-        )
+        log_message = log_message.format(b_tree_root_page.page_type, version_interface.number)
         getLogger(LOGGER_NAME).error(log_message)
         raise ValueError(log_message)
 
@@ -176,26 +145,16 @@ def stringify_b_tree(version_interface, b_tree_root_page, padding=""):
                 overflow_padding = padding
                 overflow_page = cell.overflow_pages[cell.overflow_page_number]
                 overflow_padding += "\t"
-                string += (
-                    "\n"
-                    + overflow_padding
-                    + "Overflow Page -> {}: page version {} at offset {}"
-                )
+                string += "\n" + overflow_padding + "Overflow Page -> {}: page version {} at offset {}"
                 string = string.format(
                     overflow_page.number,
                     version_interface.get_page_version(overflow_page.number),
                     overflow_page.offset,
                 )
                 while overflow_page.next_overflow_page_number:
-                    overflow_page = cell.overflow_pages[
-                        overflow_page.next_overflow_page_number
-                    ]
+                    overflow_page = cell.overflow_pages[overflow_page.next_overflow_page_number]
                     overflow_padding += "\t"
-                    string += (
-                        "\n"
-                        + overflow_padding
-                        + "Overflow Page -> {}: page version {} at offset {}"
-                    )
+                    string += "\n" + overflow_padding + "Overflow Page -> {}: page version {} at offset {}"
                     string = string.format(
                         overflow_page.number,
                         version_interface.get_page_version(overflow_page.number),
@@ -207,21 +166,13 @@ def stringify_b_tree(version_interface, b_tree_root_page, padding=""):
 
 def stringify_cell_record(cell, database_text_encoding, page_type):
     if page_type == PAGE_TYPE.B_TREE_TABLE_LEAF:
-
         column_values = []
         for record_column in cell.payload.record_columns:
-            text_affinity = (
-                True
-                if record_column.serial_type >= 13
-                and record_column.serial_type % 2 == 1
-                else False
-            )
+            text_affinity = True if record_column.serial_type >= 13 and record_column.serial_type % 2 == 1 else False
             value = record_column.value
             if record_column.value:
                 if text_affinity:
-                    column_values.append(
-                        value.decode(database_text_encoding, "replace").encode(UTF_8)
-                    )
+                    column_values.append(value.decode(database_text_encoding, "replace").encode(UTF_8))
                 else:
                     column_values.append(str(value))
             else:
@@ -230,22 +181,14 @@ def stringify_cell_record(cell, database_text_encoding, page_type):
         content = "(" + ", ".join(list(map(decode_str, column_values))) + ")"
         return f"#{cell.row_id}: {content}"
 
-    elif page_type == PAGE_TYPE.B_TREE_INDEX_LEAF:
-
+    if page_type == PAGE_TYPE.B_TREE_INDEX_LEAF:
         column_values = []
         for record_column in cell.payload.record_columns:
-            text_affinity = (
-                True
-                if record_column.serial_type >= 13
-                and record_column.serial_type % 2 == 1
-                else False
-            )
+            text_affinity = True if record_column.serial_type >= 13 and record_column.serial_type % 2 == 1 else False
             value = record_column.value
             if record_column.value:
                 if text_affinity:
-                    column_values.append(
-                        value.decode(database_text_encoding, "replace").encode(UTF_8)
-                    )
+                    column_values.append(value.decode(database_text_encoding, "replace").encode(UTF_8))
                 else:
                     column_values.append(str(value))
             else:
@@ -256,16 +199,10 @@ def stringify_cell_record(cell, database_text_encoding, page_type):
         content = "(" + ", ".join(column_values) + ")"
         return content
 
-    else:
-        log_message = (
-            "Invalid page type specified for stringify cell record: {}.  Page type should "
-            "be either {} or {}."
-        )
-        log_message = log_message.format(
-            page_type, PAGE_TYPE.B_TREE_TABLE_LEAF, PAGE_TYPE.B_TREE_INDEX_LEAF
-        )
-        getLogger(LOGGER_NAME).error(log_message)
-        raise ValueError(log_message)
+    log_message = "Invalid page type specified for stringify cell record: {}.  Page type should be either {} or {}."
+    log_message = log_message.format(page_type, PAGE_TYPE.B_TREE_TABLE_LEAF, PAGE_TYPE.B_TREE_INDEX_LEAF)
+    getLogger(LOGGER_NAME).error(log_message)
+    raise ValueError(log_message)
 
 
 def stringify_cell_records(cells, database_text_encoding, page_type):
@@ -276,14 +213,11 @@ def stringify_cell_records(cells, database_text_encoding, page_type):
 
 
 def stringify_master_schema_version(version):
-
     string = ""
 
     for master_schema_entry in version.master_schema.master_schema_entries:
-
         entry_string = (
-            "Version: {} Added Master Schema Entry: Root Page Number: {} Type: {} Name: {} "
-            "Table Name: {} SQL: {}.\n"
+            "Version: {} Added Master Schema Entry: Root Page Number: {} Type: {} Name: {} Table Name: {} SQL: {}.\n"
         )
         entry_string = entry_string.format(
             version.version_number,
@@ -299,15 +233,12 @@ def stringify_master_schema_version(version):
 
 
 def stringify_master_schema_versions(version_history):
-
     string = ""
 
     master_schema_entries = {}
 
     for version_number, version in version_history.versions.items():
-
         if version.master_schema_modified:
-
             modified_master_schema_entries = dict(
                 map(
                     lambda x: [x.md5_hash_identifier, x],
@@ -319,9 +250,7 @@ def stringify_master_schema_versions(version_history):
                 md5_hash_identifier,
                 master_schema_entry,
             ) in modified_master_schema_entries.items():
-
                 if md5_hash_identifier not in master_schema_entries:
-
                     added_string = (
                         "Version: {} Added Master Schema Entry: Root Page Number: {} Type: {} Name: {} "
                         "Table Name: {} SQL: {}.\n"
@@ -339,13 +268,9 @@ def stringify_master_schema_versions(version_history):
                     master_schema_entries[md5_hash_identifier] = master_schema_entry
 
                 elif (
-                    master_schema_entry.root_page_number
-                    != master_schema_entries[md5_hash_identifier].root_page_number
+                    master_schema_entry.root_page_number != master_schema_entries[md5_hash_identifier].root_page_number
                 ):
-
-                    previous_root_page_number = master_schema_entries[
-                        md5_hash_identifier
-                    ].root_page_number
+                    previous_root_page_number = master_schema_entries[md5_hash_identifier].root_page_number
 
                     updated_string = (
                         "Version: {} Updated Master Schema Entry: Root Page Number From: {} To: {} "
@@ -368,9 +293,7 @@ def stringify_master_schema_versions(version_history):
                 md5_hash_identifier,
                 master_schema_entry,
             ) in master_schema_entries.items():
-
                 if md5_hash_identifier not in modified_master_schema_entries:
-
                     removed_string = (
                         "Version: {} Removed Master Schema Entry: Root Page Number: {} Type: {} "
                         "Name: {} Table Name: {} SQL: {}.\n"
@@ -392,9 +315,7 @@ def stringify_page_history(version_history, padding=""):
     string = ""
     for version_number in version_history.versions:
         string += "\n" if string else ""
-        string += stringify_version_pages(
-            version_history.versions[version_number], padding
-        )
+        string += stringify_version_pages(version_history.versions[version_number], padding)
     return string
 
 
@@ -404,26 +325,11 @@ def stringify_page_information(version, padding=""):
         page_array_length = len(page_array)
         string += "\n" + padding + "\t" + "{}: {} Page Numbers: {}"
         string = string.format(page_type, page_array_length, page_array)
-    string += (
-        "\n"
-        + padding
-        + "Page Structure:\n{}".format(
-            stringify_page_structure(version, padding + "\t")
-        )
-    )
+    string += "\n" + padding + "Page Structure:\n{}".format(stringify_page_structure(version, padding + "\t"))
     if version.pointer_map_pages:
-        string += (
-            "\n"
-            + padding
-            + f"Pointer Map Entry Breakdown across {version.database_size_in_pages} Pages:"
-        )
+        string += "\n" + padding + f"Pointer Map Entry Breakdown across {version.database_size_in_pages} Pages:"
         for pointer_map_entry_breakdown in get_pointer_map_entries_breakdown(version):
-            string += (
-                "\n"
-                + padding
-                + "\t"
-                + "Pointer Map Page {}: Page {} -> {} ({}) had Pointer Page Type (Hex) {}"
-            )
+            string += "\n" + padding + "\t" + "Pointer Map Page {}: Page {} -> {} ({}) had Pointer Page Type (Hex) {}"
             string = string.format(
                 pointer_map_entry_breakdown[0],
                 pointer_map_entry_breakdown[1],
@@ -435,10 +341,7 @@ def stringify_page_information(version, padding=""):
 
 
 def stringify_page_structure(version, padding=""):
-
-    string = (
-        padding + f"{version.database_size_in_pages} Pages of {version.page_size} bytes"
-    )
+    string = padding + f"{version.database_size_in_pages} Pages of {version.page_size} bytes"
 
     string += "\n" + padding + "Database Root Page:"
     string += stringify_b_tree(version, version.root_page, padding + "\t")
@@ -450,39 +353,21 @@ def stringify_page_structure(version, padding=""):
 
     freelist_trunk_page = version.first_freelist_trunk_page
     if freelist_trunk_page:
-        string += (
-            "\n" + padding + f"Freelist Trunk Page -> {freelist_trunk_page.number}"
-        )
+        string += "\n" + padding + f"Freelist Trunk Page -> {freelist_trunk_page.number}"
         freelist_padding = padding + "\t"
         for freelist_leaf_page in freelist_trunk_page.freelist_leaf_pages:
-            string += (
-                "\n"
-                + freelist_padding
-                + f"Freelist Leaf Page -> {freelist_leaf_page.number}"
-            )
+            string += "\n" + freelist_padding + f"Freelist Leaf Page -> {freelist_leaf_page.number}"
         while freelist_trunk_page.next_freelist_trunk_page:
             freelist_trunk_page = freelist_trunk_page.next_freelist_trunk_page
-            string += (
-                "\n"
-                + freelist_padding
-                + f"Freelist Trunk Page -> {freelist_trunk_page.number}"
-            )
+            string += "\n" + freelist_padding + f"Freelist Trunk Page -> {freelist_trunk_page.number}"
             freelist_padding += "\t"
             for freelist_leaf_page in freelist_trunk_page.freelist_leaf_pages:
-                string += (
-                    "\n"
-                    + freelist_padding
-                    + f"Freelist Leaf Page -> {freelist_leaf_page.number}"
-                )
+                string += "\n" + freelist_padding + f"Freelist Leaf Page -> {freelist_leaf_page.number}"
 
     if version.master_schema:
         string += "\n" + padding + "Master Schema Root Pages:"
-        for (
-            master_schema_root_page_number
-        ) in version.master_schema.master_schema_b_tree_root_page_numbers:
-            master_schema_root_page = version.get_b_tree_root_page(
-                master_schema_root_page_number
-            )
+        for master_schema_root_page_number in version.master_schema.master_schema_b_tree_root_page_numbers:
+            master_schema_root_page = version.get_b_tree_root_page(master_schema_root_page_number)
             string += stringify_b_tree(version, master_schema_root_page, padding + "\t")
 
     return string
@@ -492,16 +377,12 @@ def stringify_unallocated_space(version, padding="", include_empty_space=True):
     string = ""
     calculated_total_fragmented_bytes = 0
     for page_number, page in version.pages.items():
-
         unallocated_content = page.unallocated_content
         if len(unallocated_content):
-            if (
-                not include_empty_space and has_content(unallocated_content)
-            ) or include_empty_space:
+            if (not include_empty_space and has_content(unallocated_content)) or include_empty_space:
                 string += "\n" if string else ""
                 string += (
-                    padding + "Page #{}: {} Page Unallocated Space Start Offset: {} "
-                    "End Offset: {} Size: {} Hex: [{}]"
+                    padding + "Page #{}: {} Page Unallocated Space Start Offset: {} End Offset: {} Size: {} Hex: [{}]"
                 )
                 string = string.format(
                     page_number,
@@ -518,8 +399,7 @@ def stringify_unallocated_space(version, padding="", include_empty_space=True):
                 if len(freeblock_content) and has_content(freeblock_content):
                     string += "\n" if string else ""
                     string += (
-                        padding
-                        + "Page #{}: {} Page Freeblock #{}: Unallocated Space Start Offset: {} "
+                        padding + "Page #{}: {} Page Freeblock #{}: Unallocated Space Start Offset: {} "
                         "End Offset: {} Size: {} Hex: [{}]"
                     )
                     string = string.format(
@@ -537,8 +417,7 @@ def stringify_unallocated_space(version, padding="", include_empty_space=True):
                 if fragment_content and has_content(fragment_content):
                     string += "\n" if string else ""
                     string += (
-                        padding
-                        + "Page #{}: {} Page Fragment #{}: Unallocated Space Start Offset: {} "
+                        padding + "Page #{}: {} Page Fragment #{}: Unallocated Space Start Offset: {} "
                         "End Offset: {} Size: {} Hex: [{}]"
                     )
                     string = string.format(
@@ -550,41 +429,30 @@ def stringify_unallocated_space(version, padding="", include_empty_space=True):
                         fragment.byte_size,
                         hexlify(fragment_content),
                     )
-                calculated_total_fragmented_bytes += (
-                    page.header.number_of_fragmented_free_bytes
-                )
+                calculated_total_fragmented_bytes += page.header.number_of_fragmented_free_bytes
 
     string += "\n" if string else ""
-    string += (
-        padding
-        + f"Calculated Total Fragmented Bytes: {calculated_total_fragmented_bytes}"
-    )
+    string += padding + f"Calculated Total Fragmented Bytes: {calculated_total_fragmented_bytes}"
     return string
 
 
 def stringify_version_pages(version, padding=""):
-    string = padding + "Version {} with {} of {} Pages: {}".format(
-        version.version_number,
-        len(version.updated_page_numbers),
-        version.database_size_in_pages,
-        version.updated_page_numbers,
+    string = (
+        padding
+        + f"Version {version.version_number} with {len(version.updated_page_numbers)} of {version.database_size_in_pages} Pages: {version.updated_page_numbers}"
     )
 
     page_versions = {}
     for page_number, page_version_number in version.page_version_index.items():
         if page_version_number in page_versions:
-            page_versions[page_version_number] = (
-                page_versions[page_version_number] + ", " + str(page_number)
-            )
+            page_versions[page_version_number] = page_versions[page_version_number] + ", " + str(page_number)
         else:
             page_versions[page_version_number] = str(page_number)
 
     for version_number in reversed(range(version.version_number + 1)):
         page_version_string = "\n" + padding + "\t" + "Version: {} has Pages: {}"
         if version_number in page_versions:
-            string += page_version_string.format(
-                version_number, page_versions[version_number]
-            )
+            string += page_version_string.format(version_number, page_versions[version_number])
         else:
             string += page_version_string.format(version_number, "")
     return string

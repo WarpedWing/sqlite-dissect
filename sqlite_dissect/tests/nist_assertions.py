@@ -37,9 +37,7 @@ def assert_md5_equals(initial_hash, final_hash, filename):
 
 # SFT-CA-02
 def assert_file_exists(file_path):
-    assert exists(file_path), "The file %s doesn't exist. File has been deleted!" % (
-        basename(file_path)
-    )
+    assert exists(file_path), "The file %s doesn't exist. File has been deleted!" % (basename(file_path))
 
 
 # SFT-CA-03
@@ -75,8 +73,7 @@ def assert_correct_journal_mode(reported_mode, correct_mode, version):
 def assert_correct_num_pages(reported_num, correct_num):
     assert reported_num == correct_num, (
         "The program reports an incorrect number of pages!\n"
-        "Correct number of pages: %s\nReported number of pages: %s"
-        % (correct_num, reported_num)
+        "Correct number of pages: %s\nReported number of pages: %s" % (correct_num, reported_num)
     )
 
 
@@ -92,27 +89,21 @@ def assert_correct_encoding(reported_enc, correct_enc):
 def assert_correct_tables(reported_names, correct_names):
     missed_tables, extra_tables = get_list_diff(reported_names, correct_names)
 
-    assert (
-        not missed_tables
-    ), "The program failed to report all tables!\nTables missing: %s" % (
+    assert not missed_tables, "The program failed to report all tables!\nTables missing: %s" % (
         ", ".join(missed_tables)
     )
-    assert not extra_tables, "The program reported extra tables!\nTables added: %s" % (
-        ", ".join(extra_tables)
-    )
+    assert not extra_tables, "The program reported extra tables!\nTables added: %s" % (", ".join(extra_tables))
 
 
 # SFT-CA-09
 def assert_correct_columns(reported_names, correct_names, table):
     missed_columns, extra_columns = get_list_diff(reported_names, correct_names)
 
-    assert not missed_columns, (
-        "The program failed to report all columns in table %s!\n"
-        "Columns missing: %s" % (table, ", ".join(missed_columns))
+    assert not missed_columns, "The program failed to report all columns in table %s!\nColumns missing: %s" % (
+        table,
+        ", ".join(missed_columns),
     )
-    assert (
-        not extra_columns
-    ), "The program reported extra columns in table %s!\n" "Columns added: %s" % (
+    assert not extra_columns, "The program reported extra columns in table %s!\nColumns added: %s" % (
         table,
         ", ".join(extra_columns),
     )
@@ -122,8 +113,7 @@ def assert_correct_columns(reported_names, correct_names, table):
 def assert_correct_num_rows(reported_num, correct_num, table):
     assert reported_num == correct_num, (
         "The program reports an incorrect number of rows for table %s!\n"
-        "Correct number of rows: %d\nReported number of rows: %d"
-        % (table, correct_num, reported_num)
+        "Correct number of rows: %d\nReported number of rows: %d" % (table, correct_num, reported_num)
     )
 
 
@@ -147,16 +137,14 @@ def assert_correct_rows(reported_rows, correct_rows):
 
     assert not missed_rows, (
         "The program failed to report all recoverable rows (missed %i out of %i)!\n"
-        "Rows missing: \n%s"
-        % (len(missed_rows), len(correct_rows), "\n".join(missed_rows))
+        "Rows missing: \n%s" % (len(missed_rows), len(correct_rows), "\n".join(missed_rows))
     )
 
 
 # SFT-CA-13
 def assert_correct_source(reported_source, accepted_sources, element):
     assert reported_source in accepted_sources, (
-        "The program reports an invalid file source!\n Element: %s\n"
-        "Reported source: %s" % (element, reported_source)
+        "The program reports an invalid file source!\n Element: %s\nReported source: %s" % (element, reported_source)
     )
 
 
@@ -167,8 +155,7 @@ def assert_correct_source(reported_source, accepted_sources, element):
 def assert_correct_statement(reported_statement, correct_statement, table):
     assert reported_statement == correct_statement, (
         "The program reports an incorrect CREATE TABLE statement for "
-        "table %s!\nCorrect statement:\n%s\nReported statement:\n%s"
-        % (table, correct_statement, reported_statement)
+        "table %s!\nCorrect statement:\n%s\nReported statement:\n%s" % (table, correct_statement, reported_statement)
     )
 
 
@@ -176,8 +163,7 @@ def assert_correct_statement(reported_statement, correct_statement, table):
 def assert_correct_data_type(reported_type, correct_type, column, table):
     assert reported_type == correct_type, (
         "The program reports an incorrect data type for column %s in table %s!\n"
-        "Correct type: %s\nReported type: %s"
-        % (column, table, correct_type, reported_type)
+        "Correct type: %s\nReported type: %s" % (column, table, correct_type, reported_type)
     )
 
 
@@ -197,8 +183,7 @@ def assert_correct_recovery_cause(reported_cause, correct_cause, row_key, table)
     assert reported_cause == correct_cause, (
         "The program reports an incorrect cause of recovery for the row with "
         "primary key %s in table %s!\nCorrect cause: %s within the database.\n"
-        "Reported cause: %s within the database."
-        % (row_key, table, correct_cause, reported_cause)
+        "Reported cause: %s within the database." % (row_key, table, correct_cause, reported_cause)
     )
 
 
@@ -206,8 +191,7 @@ def assert_correct_recovery_cause(reported_cause, correct_cause, row_key, table)
 def assert_correct_file_offset(reported_offset, correct_offset, element):
     assert reported_offset == correct_offset, (
         "The program reports an incorrect file offset for data element %s!\n"
-        "Correct offset: %d\nReported offset: %d"
-        % (element, correct_offset, reported_offset)
+        "Correct offset: %d\nReported offset: %d" % (element, correct_offset, reported_offset)
     )
 
 
@@ -221,9 +205,7 @@ def assert_correct_table_name(reported_name, correct_name, elmnt):
 
 # SFT-AO-08
 def assert_correct_transactions(reported_transactions, correct_transactions, wal):
-    missing_transactions, extra_transactions = get_list_diff(
-        reported_transactions, correct_transactions
-    )
+    missing_transactions, extra_transactions = get_list_diff(reported_transactions, correct_transactions)
 
     assert missing_transactions, (
         "The program fails to report all transactions in WAL file %s!\n"

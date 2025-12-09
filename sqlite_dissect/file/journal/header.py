@@ -28,16 +28,13 @@ RollbackJournalPageRecordHeader(object)
 
 class RollbackJournalHeader(SQLiteHeader):
     def __init__(self, rollback_journal_header_byte_array):
-
         super().__init__()
 
         logger = getLogger(LOGGER_NAME)
 
         if len(rollback_journal_header_byte_array) != ROLLBACK_JOURNAL_HEADER_LENGTH:
             log_message = "The rollback journal header byte array of size: {} is not the expected size of: {}."
-            log_message = log_message.format(
-                len(rollback_journal_header_byte_array), ROLLBACK_JOURNAL_HEADER_LENGTH
-            )
+            log_message = log_message.format(len(rollback_journal_header_byte_array), ROLLBACK_JOURNAL_HEADER_LENGTH)
             logger.error(log_message)
             raise ValueError(log_message)
 
@@ -59,24 +56,13 @@ class RollbackJournalHeader(SQLiteHeader):
 
         self.page_count = unpack(b">I", rollback_journal_header_byte_array[8:12])[0]
 
-        if (
-            rollback_journal_header_byte_array[8:12]
-            == ROLLBACK_JOURNAL_HEADER_ALL_CONTENT
-        ):
+        if rollback_journal_header_byte_array[8:12] == ROLLBACK_JOURNAL_HEADER_ALL_CONTENT:
             self.page_count = ROLLBACK_JOURNAL_ALL_CONTENT_UNTIL_END_OF_FILE
 
-        self.random_nonce_for_checksum = unpack(
-            b">I", rollback_journal_header_byte_array[12:16]
-        )[0]
-        self.initial_size_of_database_in_pages = unpack(
-            b">I", rollback_journal_header_byte_array[16:20]
-        )[0]
-        self.disk_sector_size = unpack(
-            b">I", rollback_journal_header_byte_array[20:24]
-        )[0]
-        self.size_of_pages_in_journal = unpack(
-            b">I", rollback_journal_header_byte_array[24:28]
-        )[0]
+        self.random_nonce_for_checksum = unpack(b">I", rollback_journal_header_byte_array[12:16])[0]
+        self.initial_size_of_database_in_pages = unpack(b">I", rollback_journal_header_byte_array[16:20])[0]
+        self.disk_sector_size = unpack(b">I", rollback_journal_header_byte_array[20:24])[0]
+        self.size_of_pages_in_journal = unpack(b">I", rollback_journal_header_byte_array[24:28])[0]
 
         # The page size will be the same size as the "size of pages in journal" attribute of the header.
         self.page_size = self.size_of_pages_in_journal

@@ -222,9 +222,7 @@ for version_number, version in version_history.versions.iteritems():
 
 last_version = version_history.number_of_versions - 1
 print(
-    "Version: {} has updated page numbers: {}.".format(
-        version_history.number_of_versions - 1, last_version.updated_page_numbers
-    )
+    f"Version: {version_history.number_of_versions - 1} has updated page numbers: {last_version.updated_page_numbers}."
 )
 print(f"Page Information:\n{stringify_page_information(last_version, padding)}\n")
 
@@ -537,7 +535,7 @@ if export_type and export_type.upper() == EXPORT_TYPES.CSV:
     commit_csv_exporter = CommitCsvExporter(export_directory, csv_prefix_file_name)
     print(
         "Exporting SQLite Master Schema B-Trees (Index and Table) Version Histories "
-        "(Including Carvings) to CSV Directory: {}.".format(export_directory)
+        f"(Including Carvings) to CSV Directory: {export_directory}."
     )
     for master_schema_entry in database_file.master_schema.master_schema_entries:
         if master_schema_entry.row_type in [
@@ -708,12 +706,7 @@ if export_type and export_type.upper() == EXPORT_TYPES.SQLITE:
             sqlite_base_file_name + "-" + fixed_master_schema_name + sqlite_file_postfix
         )
         print(
-            "Exporting {} to {} in {} as {}.".format(
-                name,
-                master_schema_entry_file_name,
-                export_version_directory,
-                export_type,
-            )
+            f"Exporting {name} to {master_schema_entry_file_name} in {export_version_directory} as {export_type}."
         )
         export_table_or_index_version_history_to_sqlite(
             export_version_directory,
@@ -726,9 +719,7 @@ if export_type and export_type.upper() == EXPORT_TYPES.SQLITE:
     # Export all index and table histories to csv files while supplying signatures to carve tables and carving freelists
     sqlite_file_name = sqlite_base_file_name + sqlite_file_postfix
     print(
-        "Exporting history to {} in {} with carvings as {}.".format(
-            sqlite_file_name, export_version_history_directory, export_type
-        )
+        f"Exporting history to {sqlite_file_name} in {export_version_history_directory} with carvings as {export_type}."
     )
     export_version_history_to_sqlite(
         export_version_history_directory,

@@ -86,23 +86,18 @@ class SignatureCarver:
                 "carving freeblocks with signatures: {}.  Signatures starting with variable length serial "
                 "types are not fully implemented and may result in carving false positives."
             )
-            log_message = log_message.format(
-                first_column_serial_types, simplified_signature
-            )
+            log_message = log_message.format(first_column_serial_types, simplified_signature)
             logger.warning(log_message)
             warn(log_message, RuntimeWarning)
 
         # Retrieve and compile the serial type definition signature pattern
-        serial_type_definition_signature_pattern = compile(
-            generate_signature_regex(simplified_signature, True)
-        )
+        serial_type_definition_signature_pattern = compile(generate_signature_regex(simplified_signature, True))
 
         # Initialize the carved cells
         carved_cells = []
 
         # Iterate through the freeblocks
         for freeblock in freeblocks:
-
             # Get the content for the current freeblock
             freeblock_content = freeblock.content
 
@@ -110,12 +105,8 @@ class SignatureCarver:
             serial_type_definition_match_objects = []
 
             # Find all matches for the serial type definition signature pattern
-            for (
-                serial_type_definition_match
-            ) in serial_type_definition_signature_pattern.finditer(freeblock_content):
-                serial_type_definition_match_objects.append(
-                    serial_type_definition_match
-                )
+            for serial_type_definition_match in serial_type_definition_signature_pattern.finditer(freeblock_content):
+                serial_type_definition_match_objects.append(serial_type_definition_match)
 
             """
 
@@ -158,10 +149,7 @@ class SignatureCarver:
             page_offset = version.get_page_offset(freeblock.page_number)
 
             # Iterate through the serial type definition matches in reverse
-            for serial_type_definition_match in reversed(
-                serial_type_definition_match_objects
-            ):
-
+            for serial_type_definition_match in reversed(serial_type_definition_match_objects):
                 """
 
                 For the serial type definition match objects returned from the iterator above, the match object has a
@@ -171,18 +159,11 @@ class SignatureCarver:
 
                 """
 
-                serial_type_definition_start_offset = (
-                    serial_type_definition_match.start(0)
-                )
+                serial_type_definition_start_offset = serial_type_definition_match.start(0)
                 serial_type_definition_end_offset = serial_type_definition_match.end(0)
-                file_offset = (
-                    page_offset
-                    + freeblock.start_offset
-                    + serial_type_definition_start_offset
-                )
+                file_offset = page_offset + freeblock.start_offset + serial_type_definition_start_offset
 
                 try:
-
                     # Create and append the carved b-tree cell to the carved cells list
                     carved_cells.append(
                         CarvedBTreeCell(
@@ -285,9 +266,7 @@ class SignatureCarver:
             raise CarvingError(log_message)
 
         # Retrieve and compile the serial type definition signature pattern
-        serial_type_definition_signature_pattern = compile(
-            generate_signature_regex(simplified_signature)
-        )
+        serial_type_definition_signature_pattern = compile(generate_signature_regex(simplified_signature))
 
         """
 
@@ -382,9 +361,7 @@ class SignatureCarver:
         serial_type_definition_match_objects = []
 
         # Find all matches for the serial type definition signature pattern
-        for (
-            serial_type_definition_match
-        ) in serial_type_definition_signature_pattern.finditer(unallocated_space):
+        for serial_type_definition_match in serial_type_definition_signature_pattern.finditer(unallocated_space):
             serial_type_definition_match_objects.append(serial_type_definition_match)
 
         # Initialize the carved cells
@@ -419,10 +396,7 @@ class SignatureCarver:
             page_offset = version.get_page_offset(page_number)
 
         # Iterate through the serial type definition matches in reverse
-        for serial_type_definition_match in reversed(
-            serial_type_definition_match_objects
-        ):
-
+        for serial_type_definition_match in reversed(serial_type_definition_match_objects):
             """
 
             For the serial type definition match objects returned from the iterator above, the match object has a
@@ -433,14 +407,9 @@ class SignatureCarver:
 
             serial_type_definition_start_offset = serial_type_definition_match.start(0)
             serial_type_definition_end_offset = serial_type_definition_match.end(0)
-            file_offset = (
-                page_offset
-                + unallocated_space_start_offset
-                + serial_type_definition_start_offset
-            )
+            file_offset = page_offset + unallocated_space_start_offset + serial_type_definition_start_offset
 
             try:
-
                 # Create and append the carved b-tree cell to the carved cells list
                 carved_cells.append(
                     CarvedBTreeCell(
@@ -503,20 +472,14 @@ class SignatureCarver:
         """
 
         # Reset the signature pattern removing the first serial type and compile
-        serial_type_definition_signature_pattern = compile(
-            generate_signature_regex(simplified_signature, True)
-        )
+        serial_type_definition_signature_pattern = compile(generate_signature_regex(simplified_signature, True))
 
         # Initialize the list for the partial serial type definition match objects
         partial_serial_type_definition_match_objects = []
 
         # Find all matches for the partial serial type definition signature pattern
-        for (
-            serial_type_definition_match
-        ) in serial_type_definition_signature_pattern.finditer(unallocated_space):
-            partial_serial_type_definition_match_objects.append(
-                serial_type_definition_match
-            )
+        for serial_type_definition_match in serial_type_definition_signature_pattern.finditer(unallocated_space):
+            partial_serial_type_definition_match_objects.append(serial_type_definition_match)
 
         """
 
@@ -536,17 +499,12 @@ class SignatureCarver:
 
         # Create a list of all ending indices for the serial type definition match objects and sort by beginning index
         serial_type_definition_match_objects_indices = sorted(
-            [
-                (match_object.start(0), match_object.end(0))
-                for match_object in serial_type_definition_match_objects
-            ],
+            [(match_object.start(0), match_object.end(0)) for match_object in serial_type_definition_match_objects],
             key=lambda x: x[0],
         )
 
         unallocated_space_length = len(unallocated_space)
-        serial_type_definition_match_objects_indices_length = len(
-            serial_type_definition_match_objects_indices
-        )
+        serial_type_definition_match_objects_indices_length = len(serial_type_definition_match_objects_indices)
         uncarved_unallocated_space_indices = []
 
         # If there were no serial type definition matches, we set the whole unallocated space to be checked
@@ -555,15 +513,8 @@ class SignatureCarver:
 
         else:
             last_offset = None
-            for index, match_object_index in enumerate(
-                serial_type_definition_match_objects_indices
-            ):
-
-                if (
-                    index == 0
-                    and index != len(serial_type_definition_match_objects_indices) - 1
-                ):
-
+            for index, match_object_index in enumerate(serial_type_definition_match_objects_indices):
+                if index == 0 and index != len(serial_type_definition_match_objects_indices) - 1:
                     """
 
                     Check if we are at the first index and if there are additional indexes in the match object.  If
@@ -575,16 +526,10 @@ class SignatureCarver:
                     """
 
                     if match_object_index[0] != 0:
-                        uncarved_unallocated_space_indices.append(
-                            (0, match_object_index[0])
-                        )
+                        uncarved_unallocated_space_indices.append((0, match_object_index[0]))
                         last_offset = match_object_index[1]
 
-                elif (
-                    index == 0
-                    and index == serial_type_definition_match_objects_indices_length - 1
-                ):
-
+                elif index == 0 and index == serial_type_definition_match_objects_indices_length - 1:
                     """
 
                     Check if we are at the first index and if there are no additional indexes in the match object.  If
@@ -595,20 +540,12 @@ class SignatureCarver:
 
                     """
 
-                    uncarved_unallocated_space_indices.append(
-                        (0, match_object_index[0])
-                    )
+                    uncarved_unallocated_space_indices.append((0, match_object_index[0]))
                     if match_object_index[1] != len(unallocated_space):
-                        uncarved_unallocated_space_indices.append(
-                            (match_object_index[1], unallocated_space_length)
-                        )
+                        uncarved_unallocated_space_indices.append((match_object_index[1], unallocated_space_length))
                         last_offset = match_object_index[1]
 
-                elif (
-                    index != 0
-                    and index != serial_type_definition_match_objects_indices_length - 1
-                ):
-
+                elif index != 0 and index != serial_type_definition_match_objects_indices_length - 1:
                     """
 
                     If we are not on the first index and there are more indexes to come, we just add the data portion
@@ -617,16 +554,10 @@ class SignatureCarver:
 
                     """
 
-                    uncarved_unallocated_space_indices.append(
-                        (last_offset, match_object_index[0])
-                    )
+                    uncarved_unallocated_space_indices.append((last_offset, match_object_index[0]))
                     last_offset = match_object_index[1]
 
-                elif (
-                    index != 0
-                    and index == serial_type_definition_match_objects_indices_length - 1
-                ):
-
+                elif index != 0 and index == serial_type_definition_match_objects_indices_length - 1:
                     """
 
                     If we are not on the first index and this is the last index of the previous match objects, we then
@@ -636,22 +567,15 @@ class SignatureCarver:
 
                     """
 
-                    uncarved_unallocated_space_indices.append(
-                        (last_offset, match_object_index[0])
-                    )
+                    uncarved_unallocated_space_indices.append((last_offset, match_object_index[0]))
                     if match_object_index[1] != len(unallocated_space):
-                        uncarved_unallocated_space_indices.append(
-                            (match_object_index[1], unallocated_space_length)
-                        )
+                        uncarved_unallocated_space_indices.append((match_object_index[1], unallocated_space_length))
                 else:
-
                     log_message = (
                         "Found invalid use case while carving unallocated space for page number: {} "
                         "starting from the unallocated space start offset: {} with signature: {}."
                     )
-                    log_message = log_message.format(
-                        page_number, unallocated_space_start_offset, signature.name
-                    )
+                    log_message = log_message.format(page_number, unallocated_space_start_offset, signature.name)
                     logger.error(log_message)
                     raise CarvingError(log_message)
 
@@ -663,40 +587,26 @@ class SignatureCarver:
         """
 
         partial_cutoff_offset = len(unallocated_space)
-        for partial_serial_type_definition_match in reversed(
-            partial_serial_type_definition_match_objects
-        ):
-            for uncarved_allocated_space_index in reversed(
-                uncarved_unallocated_space_indices
-            ):
+        for partial_serial_type_definition_match in reversed(partial_serial_type_definition_match_objects):
+            for uncarved_allocated_space_index in reversed(uncarved_unallocated_space_indices):
+                # Skip if indices are None (can happen with malformed data)
+                if uncarved_allocated_space_index[0] is None or uncarved_allocated_space_index[1] is None:
+                    continue
 
-                cutoff_offset = min(
-                    uncarved_allocated_space_index[1], partial_cutoff_offset
-                )
+                cutoff_offset = min(uncarved_allocated_space_index[1], partial_cutoff_offset)
 
-                partial_serial_type_definition_start_offset = (
-                    partial_serial_type_definition_match.start(0)
-                )
-                partial_serial_type_definition_end_offset = (
-                    partial_serial_type_definition_match.end(0)
-                )
+                partial_serial_type_definition_start_offset = partial_serial_type_definition_match.start(0)
+                partial_serial_type_definition_end_offset = partial_serial_type_definition_match.end(0)
 
                 if (
-                    partial_serial_type_definition_start_offset
-                    >= uncarved_allocated_space_index[0]
-                    and partial_serial_type_definition_end_offset
-                    <= uncarved_allocated_space_index[1]
+                    partial_serial_type_definition_start_offset >= uncarved_allocated_space_index[0]
+                    and partial_serial_type_definition_end_offset <= uncarved_allocated_space_index[1]
                 ):
-
-                    relative_offset = (
-                        unallocated_space_start_offset
-                        + partial_serial_type_definition_start_offset
-                    )
+                    relative_offset = unallocated_space_start_offset + partial_serial_type_definition_start_offset
                     file_offset = page_offset + relative_offset
                     first_column_serial_types = simplified_signature[0]
 
                     try:
-
                         # Create and append the carved b-tree cell to the carved cells list
                         carved_cells.append(
                             CarvedBTreeCell(
@@ -717,9 +627,7 @@ class SignatureCarver:
                         )
 
                         # Update the partial cutoff offset
-                        partial_cutoff_offset = (
-                            partial_serial_type_definition_start_offset
-                        )
+                        partial_cutoff_offset = partial_serial_type_definition_start_offset
 
                     except (CellCarvingError, ValueError):
                         log_message = (

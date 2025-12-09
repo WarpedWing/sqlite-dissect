@@ -97,7 +97,6 @@ class WriteAheadLogCommitRecord(Version):
         store_in_memory=False,
         strict_format_checking=True,
     ):
-
         super().__init__(
             write_ahead_log.file_handle,
             version_number,
@@ -166,19 +165,15 @@ class WriteAheadLogCommitRecord(Version):
 
         # Iterate through the frames
         for frame in frames:
-
             # Make sure the page number to the current frame doesn't already exist in the previous frames
             if frame.header.page_number in self.frames:
                 log_message = "Frame page number: {} found already existing in frame page numbers: {} in version: {}."
-                log_message = log_message.format(
-                    frame.header.page_number, self.frames.keys(), self.version_number
-                )
+                log_message = log_message.format(frame.header.page_number, self.frames.keys(), self.version_number)
                 self._logger.error(log_message)
                 raise WalCommitRecordParsingError(log_message)
 
             # Check if the frame is a commit frame
             if frame.commit_frame:
-
                 # Make sure this commit frame hasn't already been committed
                 if self.committed:
                     log_message = (
@@ -237,9 +232,7 @@ class WriteAheadLogCommitRecord(Version):
         self.page_version_index = dict.copy(page_version_index)
         for updated_page_number in self.updated_page_numbers:
             self.page_version_index[updated_page_number] = self.version_number
-            self.page_frame_index[updated_page_number] = self.frames[
-                updated_page_number
-            ].frame_number
+            self.page_frame_index[updated_page_number] = self.frames[updated_page_number].frame_number
 
         self.database_size_in_pages = self.committed_page_size
 
@@ -320,7 +313,6 @@ class WriteAheadLogCommitRecord(Version):
         """
 
         if SQLITE_MASTER_SCHEMA_ROOT_PAGE in self.updated_page_numbers:
-
             # Remove it from the updated b-tree pages
             self.updated_b_tree_page_numbers.remove(SQLITE_MASTER_SCHEMA_ROOT_PAGE)
 
@@ -333,23 +325,14 @@ class WriteAheadLogCommitRecord(Version):
             """
 
             root_page_data = self.get_page_data(SQLITE_MASTER_SCHEMA_ROOT_PAGE)
-            database_header_md5_hex_digest = get_md5_hash(
-                root_page_data[:SQLITE_DATABASE_HEADER_LENGTH]
-            )
-            root_page_only_md5_hex_digest = get_md5_hash(
-                root_page_data[SQLITE_DATABASE_HEADER_LENGTH:]
-            )
+            database_header_md5_hex_digest = get_md5_hash(root_page_data[:SQLITE_DATABASE_HEADER_LENGTH])
+            root_page_only_md5_hex_digest = get_md5_hash(root_page_data[SQLITE_DATABASE_HEADER_LENGTH:])
 
             if last_database_header.md5_hex_digest != database_header_md5_hex_digest:
                 self.database_header_modified = True
-                self._database_header = DatabaseHeader(
-                    root_page_data[:SQLITE_DATABASE_HEADER_LENGTH]
-                )
+                self._database_header = DatabaseHeader(root_page_data[:SQLITE_DATABASE_HEADER_LENGTH])
 
-                if (
-                    self._database_header.md5_hex_digest
-                    != database_header_md5_hex_digest
-                ):
+                if self._database_header.md5_hex_digest != database_header_md5_hex_digest:
                     log_message = (
                         "The database header md5 hex digest: {} did not match the previously retrieved "
                         "calculated database header md5 hex digest: {} in commit record version: {} "
@@ -372,10 +355,7 @@ class WriteAheadLogCommitRecord(Version):
 
             """
 
-            if (
-                last_master_schema.root_page.header.root_page_only_md5_hex_digest
-                != root_page_only_md5_hex_digest
-            ):
+            if last_master_schema.root_page.header.root_page_only_md5_hex_digest != root_page_only_md5_hex_digest:
                 self.root_b_tree_page_modified = True
                 self.master_schema_modified = True
 
@@ -395,18 +375,12 @@ class WriteAheadLogCommitRecord(Version):
                     "The sqlite database root page was found in version: {} in the updated pages: {} when "
                     "both the database header and the root b-tree page were not modified."
                 )
-                log_message = log_message.format(
-                    self.version_number, self.updated_page_numbers
-                )
+                log_message = log_message.format(self.version_number, self.updated_page_numbers)
                 self._logger.warning(log_message)
                 warn(log_message, RuntimeWarning)
 
         if not self.master_schema_modified:
-
-            for (
-                last_master_schema_page_number
-            ) in last_master_schema.master_schema_page_numbers:
-
+            for last_master_schema_page_number in last_master_schema.master_schema_page_numbers:
                 """
 
                 Since we are removing the use case of the SQLite master schema root page and checking for master
@@ -441,32 +415,22 @@ class WriteAheadLogCommitRecord(Version):
         """
 
         if self.database_header_modified:
-
             if not self._database_header:
                 log_message = (
                     "The database header does not exist when the database header was modified in commit "
                     "record version: {} on updated pages: {}."
                 )
-                log_message = log_message.format(
-                    self.version_number, self.updated_page_numbers
-                )
+                log_message = log_message.format(self.version_number, self.updated_page_numbers)
                 self._logger.error(log_message)
                 raise WalCommitRecordParsingError(log_message)
 
-            self.database_header_differences = compare_database_headers(
-                last_database_header, self._database_header
-            )
+            self.database_header_differences = compare_database_headers(last_database_header, self._database_header)
 
-            log_message = (
-                "Database header was modified in version: {} with differences: {}."
-            )
-            log_message = log_message.format(
-                self.version_number, self.database_header_differences
-            )
+            log_message = "Database header was modified in version: {} with differences: {}."
+            log_message = log_message.format(self.version_number, self.database_header_differences)
             self._logger.info(log_message)
 
         else:
-
             self.database_header_differences = {}
 
             """
@@ -489,7 +453,6 @@ class WriteAheadLogCommitRecord(Version):
 
             # Make sure the database size in pages remained the same as the committed page size
             if self.committed_page_size != last_database_header.database_size_in_pages:
-
                 log_message = (
                     "Database header for version: {} specifies a database size in pages of {} but the "
                     "committed page size is {}.  Possibly erroneous use cases may occur when parsing."
@@ -503,7 +466,6 @@ class WriteAheadLogCommitRecord(Version):
                 warn(log_message, RuntimeWarning)
 
         if self.master_schema_modified:
-
             log_message = "Master schema was modified in version: {}."
             log_message = log_message.format(self.version_number)
             self._logger.info(log_message)
@@ -552,15 +514,12 @@ class WriteAheadLogCommitRecord(Version):
         """
 
         if self.master_schema_modified:
-
             self._root_page = self.get_b_tree_root_page(SQLITE_MASTER_SCHEMA_ROOT_PAGE)
 
             self._master_schema = MasterSchema(self, self._root_page)
 
             # Remove the master schema page numbers from the updated b-tree pages
-            for (
-                master_schema_page_number
-            ) in self._master_schema.master_schema_page_numbers:
+            for master_schema_page_number in self._master_schema.master_schema_page_numbers:
                 if master_schema_page_number in self.updated_b_tree_page_numbers:
                     self.updated_b_tree_page_numbers.remove(master_schema_page_number)
 
@@ -578,13 +537,9 @@ class WriteAheadLogCommitRecord(Version):
 
         """
 
-        first_freelist_trunk_page_number = (
-            last_database_header.first_freelist_trunk_page_number
-        )
+        first_freelist_trunk_page_number = last_database_header.first_freelist_trunk_page_number
         if self._database_header:
-            first_freelist_trunk_page_number = (
-                self._database_header.first_freelist_trunk_page_number
-            )
+            first_freelist_trunk_page_number = self._database_header.first_freelist_trunk_page_number
 
         if first_freelist_trunk_page_number:
             self.first_freelist_trunk_page = FreelistTrunkPage(
@@ -614,9 +569,7 @@ class WriteAheadLogCommitRecord(Version):
                 "The number of observed freelist pages: {} does not match the number of freelist pages "
                 "specified in the header: {} for version: {}."
             )
-            log_message = log_message.format(
-                observed_freelist_pages, number_of_freelist_pages, self.version_number
-            )
+            log_message = log_message.format(observed_freelist_pages, number_of_freelist_pages, self.version_number)
             self._logger.error(log_message)
             raise WalCommitRecordParsingError(log_message)
 
@@ -637,18 +590,12 @@ class WriteAheadLogCommitRecord(Version):
 
         """
 
-        largest_root_b_tree_page_number = (
-            last_database_header.largest_root_b_tree_page_number
-        )
+        largest_root_b_tree_page_number = last_database_header.largest_root_b_tree_page_number
         if self._database_header:
-            largest_root_b_tree_page_number = (
-                self._database_header.largest_root_b_tree_page_number
-            )
+            largest_root_b_tree_page_number = self._database_header.largest_root_b_tree_page_number
 
         if largest_root_b_tree_page_number:
-            self.pointer_map_pages = create_pointer_map_pages(
-                self, self.database_size_in_pages, self.page_size
-            )
+            self.pointer_map_pages = create_pointer_map_pages(self, self.database_size_in_pages, self.page_size)
         else:
             self.pointer_map_pages = []
 
@@ -694,17 +641,12 @@ class WriteAheadLogCommitRecord(Version):
         """
 
         if self.store_in_memory:
-
             if not self._database_header:
                 root_page_data = self.get_page_data(SQLITE_MASTER_SCHEMA_ROOT_PAGE)
-                self._database_header = DatabaseHeader(
-                    root_page_data[:SQLITE_DATABASE_HEADER_LENGTH]
-                )
+                self._database_header = DatabaseHeader(root_page_data[:SQLITE_DATABASE_HEADER_LENGTH])
 
             if not self._root_page:
-                self._root_page = self.get_b_tree_root_page(
-                    SQLITE_MASTER_SCHEMA_ROOT_PAGE
-                )
+                self._root_page = self.get_b_tree_root_page(SQLITE_MASTER_SCHEMA_ROOT_PAGE)
 
             if not self._master_schema:
                 self._master_schema = MasterSchema(self, self._root_page)
@@ -715,10 +657,7 @@ class WriteAheadLogCommitRecord(Version):
         log_message = log_message.format(self.version_number, self.updated_page_numbers)
         self._logger.info(log_message)
 
-    def stringify(
-        self, padding="", print_pages=True, print_schema=True, print_frames=True
-    ):
-
+    def stringify(self, padding="", print_pages=True, print_schema=True, print_frames=True):
         # Create the initial string
         string = (
             "\n"
@@ -775,24 +714,13 @@ class WriteAheadLogCommitRecord(Version):
 
         # Parse the database header differences
         for field, difference in self.database_header_differences.items():
-            difference_string = (
-                "\n"
-                + padding
-                + "\t"
-                + "Field: {} changed from previous Value: {} to new Value: {}"
-            )
+            difference_string = "\n" + padding + "\t" + "Field: {} changed from previous Value: {} to new Value: {}"
             string += difference_string.format(field, difference[0], difference[1])
 
         # Print the frames if specified
         if print_frames:
             for page_number in self.frames:
-                string += (
-                    "\n"
-                    + padding
-                    + "Frame:\n{}".format(
-                        self.frames[page_number].stringify(padding + "\t")
-                    )
-                )
+                string += "\n" + padding + "Frame:\n{}".format(self.frames[page_number].stringify(padding + "\t"))
 
         # Get the super stringify information and concatenate it with this string and return it
         return super().stringify(padding, print_pages, print_schema) + string
@@ -802,46 +730,35 @@ class WriteAheadLogCommitRecord(Version):
         return len(self.frames)
 
     def get_page_data(self, page_number, offset=0, number_of_bytes=None):
-
         page_version = self.page_version_index[page_number]
 
         if page_version == BASE_VERSION_NUMBER:
-
             return self._database.get_page_data(page_number, offset, number_of_bytes)
 
-        else:
+        # Set the number of bytes to the rest of the page if it was not set
+        number_of_bytes = self.page_size - offset if not number_of_bytes else number_of_bytes
 
-            # Set the number of bytes to the rest of the page if it was not set
-            number_of_bytes = (
-                self.page_size - offset if not number_of_bytes else number_of_bytes
+        if offset >= self.page_size:
+            log_message = "Requested offset: {} is >= the page size: {} for page: {}."
+            log_message = log_message.format(offset, self.page_size, page_number)
+            self._logger.error(log_message)
+            raise ValueError(log_message)
+
+        if offset + number_of_bytes > self.page_size:
+            log_message = "Requested length of data: {} at offset {} to {} is > than the page size: {} for page: {}."
+            log_message = log_message.format(
+                number_of_bytes,
+                offset,
+                number_of_bytes + offset,
+                self.page_size,
+                page_number,
             )
+            self._logger.error(log_message)
+            raise ValueError(log_message)
 
-            if offset >= self.page_size:
-                log_message = (
-                    "Requested offset: {} is >= the page size: {} for page: {}."
-                )
-                log_message = log_message.format(offset, self.page_size, page_number)
-                self._logger.error(log_message)
-                raise ValueError(log_message)
+        page_offset = self.get_page_offset(page_number)
 
-            if offset + number_of_bytes > self.page_size:
-                log_message = (
-                    "Requested length of data: {} at offset {} to {} is > than the page size: {} "
-                    "for page: {}."
-                )
-                log_message = log_message.format(
-                    number_of_bytes,
-                    offset,
-                    number_of_bytes + offset,
-                    self.page_size,
-                    page_number,
-                )
-                self._logger.error(log_message)
-                raise ValueError(log_message)
-
-            page_offset = self.get_page_offset(page_number)
-
-            return self.file_handle.read_data(page_offset + offset, number_of_bytes)
+        return self.file_handle.read_data(page_offset + offset, number_of_bytes)
 
     def get_page_offset(self, page_number):
         """
@@ -866,41 +783,31 @@ class WriteAheadLogCommitRecord(Version):
 
         if page_number < 1 or page_number > self.database_size_in_pages:
             log_message = "Invalid page number: {} for version: {} with database size in pages: {}."
-            log_message = log_message.format(
-                page_number, self.version_number, self.database_size_in_pages
-            )
+            log_message = log_message.format(page_number, self.version_number, self.database_size_in_pages)
             self._logger.error(log_message)
             raise ValueError(log_message)
 
         page_version = self.page_version_index[page_number]
 
         if page_version == BASE_VERSION_NUMBER:
-
             return (page_number - 1) * self.page_size
 
-        else:
-
-            if page_version == self.version_number:
-
-                if page_number not in self.frames:
-                    log_message = (
-                        "Page number has version: {} but not in frame pages: {}."
-                    )
-                    log_message = log_message.format(page_number, self.frames.keys())
-                    self._logger.error(log_message)
-                    raise WalCommitRecordParsingError(log_message)
-
-            if page_number not in self.page_frame_index:
-                log_message = "Page number: {} with version: {} is not in the page frame index: {}."
-                log_message = log_message.format(
-                    page_number, page_version, self.page_frame_index
-                )
+        if page_version == self.version_number:
+            if page_number not in self.frames:
+                log_message = "Page number has version: {} but not in frame pages: {}."
+                log_message = log_message.format(page_number, self.frames.keys())
                 self._logger.error(log_message)
-                raise KeyError(log_message)
+                raise WalCommitRecordParsingError(log_message)
 
-            frame_number = self.page_frame_index[page_number]
+        if page_number not in self.page_frame_index:
+            log_message = "Page number: {} with version: {} is not in the page frame index: {}."
+            log_message = log_message.format(page_number, page_version, self.page_frame_index)
+            self._logger.error(log_message)
+            raise KeyError(log_message)
 
-            """
+        frame_number = self.page_frame_index[page_number]
+
+        """
 
             The WAL file is structured with a file header, then a series of frames that each have a frame header and
             page in them.  The offset is determined by adding the WAL header length to the number of frame header
@@ -909,12 +816,8 @@ class WriteAheadLogCommitRecord(Version):
 
             """
 
-            # Return where the offset of the page to this commit record in the WAL file would start at
-            return (
-                WAL_HEADER_LENGTH
-                + WAL_FRAME_HEADER_LENGTH * frame_number
-                + self.page_size * (frame_number - 1)
-            )
+        # Return where the offset of the page to this commit record in the WAL file would start at
+        return WAL_HEADER_LENGTH + WAL_FRAME_HEADER_LENGTH * frame_number + self.page_size * (frame_number - 1)
 
     def _parse_database_header_differences(self):
         """
@@ -934,7 +837,6 @@ class WriteAheadLogCommitRecord(Version):
 
         # Make sure there are database header differences
         if not self.database_header_differences:
-
             # There are no differences so return
             return
 
@@ -981,13 +883,9 @@ class WriteAheadLogCommitRecord(Version):
 
         """
 
-        if (
-            DATABASE_HEADER_VERSIONED_FIELDS.MD5_HEX_DIGEST
-            not in database_header_differences
-        ):
+        if DATABASE_HEADER_VERSIONED_FIELDS.MD5_HEX_DIGEST not in database_header_differences:
             log_message = (
-                "The database header md5 hex digests are not different in the database headers "
-                "for version: {}."
+                "The database header md5 hex digests are not different in the database headers for version: {}."
             )
             log_message = log_message.format(self.version_number)
             self._logger.error(log_message)
@@ -1020,52 +918,41 @@ class WriteAheadLogCommitRecord(Version):
 
         # Check that the file change counter was not modified without the version valid for number
         if (
-            DATABASE_HEADER_VERSIONED_FIELDS.FILE_CHANGE_COUNTER
-            in database_header_differences
-            and DATABASE_HEADER_VERSIONED_FIELDS.VERSION_VALID_FOR_NUMBER
-            not in database_header_differences
+            DATABASE_HEADER_VERSIONED_FIELDS.FILE_CHANGE_COUNTER in database_header_differences
+            and DATABASE_HEADER_VERSIONED_FIELDS.VERSION_VALID_FOR_NUMBER not in database_header_differences
         ):
             log_message = (
                 "The database header file change counter: {} was found in the database header "
                 "differences but the version valid for number was not for version: {}."
             )
             log_message = log_message.format(
-                database_header_differences[
-                    DATABASE_HEADER_VERSIONED_FIELDS.FILE_CHANGE_COUNTER
-                ],
+                database_header_differences[DATABASE_HEADER_VERSIONED_FIELDS.FILE_CHANGE_COUNTER],
                 self.version_number,
             )
             self._logger.error(log_message)
             raise WalCommitRecordParsingError(log_message)
 
         # Check that the version valid for number was not modified without the file change counter
-        elif (
-            DATABASE_HEADER_VERSIONED_FIELDS.VERSION_VALID_FOR_NUMBER
-            in database_header_differences
-            and DATABASE_HEADER_VERSIONED_FIELDS.FILE_CHANGE_COUNTER
-            not in database_header_differences
+        if (
+            DATABASE_HEADER_VERSIONED_FIELDS.VERSION_VALID_FOR_NUMBER in database_header_differences
+            and DATABASE_HEADER_VERSIONED_FIELDS.FILE_CHANGE_COUNTER not in database_header_differences
         ):
             log_message = (
                 "The database header version valid for number: {} was found in the database header "
                 "differences but the file change counter was not for version: {}."
             )
             log_message = log_message.format(
-                database_header_differences[
-                    DATABASE_HEADER_VERSIONED_FIELDS.VERSION_VALID_FOR_NUMBER
-                ],
+                database_header_differences[DATABASE_HEADER_VERSIONED_FIELDS.VERSION_VALID_FOR_NUMBER],
                 self.version_number,
             )
             self._logger.error(log_message)
             raise WalCommitRecordParsingError(log_message)
 
         # Check if both file change counter and version valid for number was modified
-        elif (
-            DATABASE_HEADER_VERSIONED_FIELDS.FILE_CHANGE_COUNTER
-            in database_header_differences
-            and DATABASE_HEADER_VERSIONED_FIELDS.VERSION_VALID_FOR_NUMBER
-            in database_header_differences
+        if (
+            DATABASE_HEADER_VERSIONED_FIELDS.FILE_CHANGE_COUNTER in database_header_differences
+            and DATABASE_HEADER_VERSIONED_FIELDS.VERSION_VALID_FOR_NUMBER in database_header_differences
         ):
-
             """
 
             Note:  We check both fields are incremented only one value from their value in the previous version.
@@ -1080,10 +967,7 @@ class WriteAheadLogCommitRecord(Version):
             ]
 
             # Check the file change counter difference against it's previous value as stated above
-            if (
-                file_change_counter_difference[0] + 1
-                != file_change_counter_difference[1]
-            ):
+            if file_change_counter_difference[0] + 1 != file_change_counter_difference[1]:
                 log_message = (
                     "The previous database header file change counter: {} is more than one off from the "
                     "new database header file change counter: {} for version: {}."
@@ -1102,10 +986,7 @@ class WriteAheadLogCommitRecord(Version):
             ]
 
             # Check the version valid for number difference against it's previous value as stated above
-            if (
-                version_valid_for_number_difference[0] + 1
-                != version_valid_for_number_difference[1]
-            ):
+            if version_valid_for_number_difference[0] + 1 != version_valid_for_number_difference[1]:
                 log_message = (
                     "The previous database header version valid for number: {} is more than one off from "
                     "the new database header version valid for number: {} for version: {}."
@@ -1123,12 +1004,8 @@ class WriteAheadLogCommitRecord(Version):
             self.version_valid_for_number_incremented = True
 
             # Delete the entries from the dictionary
-            del database_header_differences[
-                DATABASE_HEADER_VERSIONED_FIELDS.FILE_CHANGE_COUNTER
-            ]
-            del database_header_differences[
-                DATABASE_HEADER_VERSIONED_FIELDS.VERSION_VALID_FOR_NUMBER
-            ]
+            del database_header_differences[DATABASE_HEADER_VERSIONED_FIELDS.FILE_CHANGE_COUNTER]
+            del database_header_differences[DATABASE_HEADER_VERSIONED_FIELDS.VERSION_VALID_FOR_NUMBER]
 
         """
 
@@ -1147,11 +1024,7 @@ class WriteAheadLogCommitRecord(Version):
 
         """
 
-        if (
-            DATABASE_HEADER_VERSIONED_FIELDS.DATABASE_SIZE_IN_PAGES
-            in database_header_differences
-        ):
-
+        if DATABASE_HEADER_VERSIONED_FIELDS.DATABASE_SIZE_IN_PAGES in database_header_differences:
             # Get the database size in pages difference
             database_size_in_pages_difference = database_header_differences[
                 DATABASE_HEADER_VERSIONED_FIELDS.DATABASE_SIZE_IN_PAGES
@@ -1177,9 +1050,7 @@ class WriteAheadLogCommitRecord(Version):
             self.database_size_in_pages_modified = True
 
             # Delete the entry from the dictionary
-            del database_header_differences[
-                DATABASE_HEADER_VERSIONED_FIELDS.DATABASE_SIZE_IN_PAGES
-            ]
+            del database_header_differences[DATABASE_HEADER_VERSIONED_FIELDS.DATABASE_SIZE_IN_PAGES]
 
         """
 
@@ -1210,33 +1081,19 @@ class WriteAheadLogCommitRecord(Version):
 
         """
 
-        if (
-            DATABASE_HEADER_VERSIONED_FIELDS.FIRST_FREELIST_TRUNK_PAGE_NUMBER
-            in database_header_differences
-        ):
-            value = database_header_differences[
-                DATABASE_HEADER_VERSIONED_FIELDS.FIRST_FREELIST_TRUNK_PAGE_NUMBER
-            ]
+        if DATABASE_HEADER_VERSIONED_FIELDS.FIRST_FREELIST_TRUNK_PAGE_NUMBER in database_header_differences:
+            value = database_header_differences[DATABASE_HEADER_VERSIONED_FIELDS.FIRST_FREELIST_TRUNK_PAGE_NUMBER]
             self.modified_first_freelist_trunk_page_number = value[1]
 
             # Delete the entry from the dictionary
-            del database_header_differences[
-                DATABASE_HEADER_VERSIONED_FIELDS.FIRST_FREELIST_TRUNK_PAGE_NUMBER
-            ]
+            del database_header_differences[DATABASE_HEADER_VERSIONED_FIELDS.FIRST_FREELIST_TRUNK_PAGE_NUMBER]
 
-        if (
-            DATABASE_HEADER_VERSIONED_FIELDS.NUMBER_OF_FREE_LIST_PAGES
-            in database_header_differences
-        ):
-            value = database_header_differences[
-                DATABASE_HEADER_VERSIONED_FIELDS.NUMBER_OF_FREE_LIST_PAGES
-            ]
+        if DATABASE_HEADER_VERSIONED_FIELDS.NUMBER_OF_FREE_LIST_PAGES in database_header_differences:
+            value = database_header_differences[DATABASE_HEADER_VERSIONED_FIELDS.NUMBER_OF_FREE_LIST_PAGES]
             self.modified_number_of_freelist_pages = value[1]
 
             # Delete the entry from the dictionary
-            del database_header_differences[
-                DATABASE_HEADER_VERSIONED_FIELDS.NUMBER_OF_FREE_LIST_PAGES
-            ]
+            del database_header_differences[DATABASE_HEADER_VERSIONED_FIELDS.NUMBER_OF_FREE_LIST_PAGES]
 
         """
 
@@ -1250,21 +1107,13 @@ class WriteAheadLogCommitRecord(Version):
 
         """
 
-        if (
-            DATABASE_HEADER_VERSIONED_FIELDS.LARGEST_ROOT_B_TREE_PAGE_NUMBER
-            in database_header_differences
-        ):
-            change = database_header_differences[
-                DATABASE_HEADER_VERSIONED_FIELDS.LARGEST_ROOT_B_TREE_PAGE_NUMBER
-            ]
+        if DATABASE_HEADER_VERSIONED_FIELDS.LARGEST_ROOT_B_TREE_PAGE_NUMBER in database_header_differences:
+            change = database_header_differences[DATABASE_HEADER_VERSIONED_FIELDS.LARGEST_ROOT_B_TREE_PAGE_NUMBER]
             previous_largest_root_b_tree_page_number = change[0]
             new_largest_root_b_tree_page_number = change[1]
 
             # Check if auto-vacuuming was turned off
-            if (
-                previous_largest_root_b_tree_page_number
-                and not new_largest_root_b_tree_page_number
-            ):
+            if previous_largest_root_b_tree_page_number and not new_largest_root_b_tree_page_number:
                 log_message = (
                     "The previous largest root b-tree page number: {} existed where the new one does not "
                     "meaning that auto-vacuuming was turned off which cannot occur in version: {} on "
@@ -1279,10 +1128,7 @@ class WriteAheadLogCommitRecord(Version):
                 raise WalCommitRecordParsingError(log_message)
 
             # Check if auto-vacuuming was turned on
-            elif (
-                not previous_largest_root_b_tree_page_number
-                and new_largest_root_b_tree_page_number
-            ):
+            if not previous_largest_root_b_tree_page_number and new_largest_root_b_tree_page_number:
                 log_message = (
                     "The previous largest root b-tree page number did not exist where the new one is: {} "
                     "meaning that auto-vacuuming was turned on which cannot occur in version: {} on "
@@ -1324,14 +1170,10 @@ class WriteAheadLogCommitRecord(Version):
             """
 
             # Set the modified largest root b-tree page number
-            self.modified_largest_root_b_tree_page_number = (
-                new_largest_root_b_tree_page_number
-            )
+            self.modified_largest_root_b_tree_page_number = new_largest_root_b_tree_page_number
 
             # Delete the entry from the dictionary
-            del database_header_differences[
-                DATABASE_HEADER_VERSIONED_FIELDS.LARGEST_ROOT_B_TREE_PAGE_NUMBER
-            ]
+            del database_header_differences[DATABASE_HEADER_VERSIONED_FIELDS.LARGEST_ROOT_B_TREE_PAGE_NUMBER]
 
         """
 
@@ -1348,15 +1190,9 @@ class WriteAheadLogCommitRecord(Version):
 
         """
 
-        if (
-            DATABASE_HEADER_VERSIONED_FIELDS.SCHEMA_COOKIE
-            in database_header_differences
-        ):
-
+        if DATABASE_HEADER_VERSIONED_FIELDS.SCHEMA_COOKIE in database_header_differences:
             # Get the schema cookie difference
-            schema_cookie_difference = database_header_differences[
-                DATABASE_HEADER_VERSIONED_FIELDS.SCHEMA_COOKIE
-            ]
+            schema_cookie_difference = database_header_differences[DATABASE_HEADER_VERSIONED_FIELDS.SCHEMA_COOKIE]
 
             # Check the schema cookie difference against 'previous value to make sure it is not less
             if schema_cookie_difference[0] > schema_cookie_difference[1]:
@@ -1391,18 +1227,14 @@ class WriteAheadLogCommitRecord(Version):
                 raise WalCommitRecordParsingError(log_message)
 
             # Delete the entry from the dictionary
-            del database_header_differences[
-                DATABASE_HEADER_VERSIONED_FIELDS.SCHEMA_COOKIE
-            ]
+            del database_header_differences[DATABASE_HEADER_VERSIONED_FIELDS.SCHEMA_COOKIE]
 
         elif self.master_schema_modified:
             log_message = (
                 "The schema cookie was not modified indicating the master schema was not modified "
                 "as well but was found to have been in version: {} on updated pages: {}."
             )
-            log_message = log_message.format(
-                self.version_number, self.updated_page_numbers
-            )
+            log_message = log_message.format(self.version_number, self.updated_page_numbers)
             self._logger.error(log_message)
             raise WalCommitRecordParsingError(log_message)
 
@@ -1427,52 +1259,41 @@ class WriteAheadLogCommitRecord(Version):
 
         # Check that the schema format number was not modified without the database text encoding
         if (
-            DATABASE_HEADER_VERSIONED_FIELDS.SCHEMA_FORMAT_NUMBER
-            in database_header_differences
-            and DATABASE_HEADER_VERSIONED_FIELDS.DATABASE_TEXT_ENCODING
-            not in database_header_differences
+            DATABASE_HEADER_VERSIONED_FIELDS.SCHEMA_FORMAT_NUMBER in database_header_differences
+            and DATABASE_HEADER_VERSIONED_FIELDS.DATABASE_TEXT_ENCODING not in database_header_differences
         ):
             log_message = (
                 "The database header schema format number: {} was found in the database header "
                 "differences but the database text encoding was not for version: {}."
             )
             log_message = log_message.format(
-                database_header_differences[
-                    DATABASE_HEADER_VERSIONED_FIELDS.SCHEMA_FORMAT_NUMBER
-                ],
+                database_header_differences[DATABASE_HEADER_VERSIONED_FIELDS.SCHEMA_FORMAT_NUMBER],
                 self.version_number,
             )
             self._logger.error(log_message)
             raise WalCommitRecordParsingError(log_message)
 
         # Check that the database text encoding was not modified without the schema format number
-        elif (
-            DATABASE_HEADER_VERSIONED_FIELDS.DATABASE_TEXT_ENCODING
-            in database_header_differences
-            and DATABASE_HEADER_VERSIONED_FIELDS.SCHEMA_FORMAT_NUMBER
-            not in database_header_differences
+        if (
+            DATABASE_HEADER_VERSIONED_FIELDS.DATABASE_TEXT_ENCODING in database_header_differences
+            and DATABASE_HEADER_VERSIONED_FIELDS.SCHEMA_FORMAT_NUMBER not in database_header_differences
         ):
             log_message = (
                 "The database header database text encoding: {} was found in the database header "
                 "differences but the schema format number was not for version: {}."
             )
             log_message = log_message.format(
-                database_header_differences[
-                    DATABASE_HEADER_VERSIONED_FIELDS.DATABASE_TEXT_ENCODING
-                ],
+                database_header_differences[DATABASE_HEADER_VERSIONED_FIELDS.DATABASE_TEXT_ENCODING],
                 self.version_number,
             )
             self._logger.error(log_message)
             raise WalCommitRecordParsingError(log_message)
 
         # Check if both the schema format number was not modified without the database text encoding was modified
-        elif (
-            DATABASE_HEADER_VERSIONED_FIELDS.SCHEMA_FORMAT_NUMBER
-            in database_header_differences
-            and DATABASE_HEADER_VERSIONED_FIELDS.DATABASE_TEXT_ENCODING
-            in database_header_differences
+        if (
+            DATABASE_HEADER_VERSIONED_FIELDS.SCHEMA_FORMAT_NUMBER in database_header_differences
+            and DATABASE_HEADER_VERSIONED_FIELDS.DATABASE_TEXT_ENCODING in database_header_differences
         ):
-
             # Get the schema format number difference
             schema_format_number_difference = database_header_differences[
                 DATABASE_HEADER_VERSIONED_FIELDS.SCHEMA_FORMAT_NUMBER
@@ -1520,10 +1341,7 @@ class WriteAheadLogCommitRecord(Version):
 
             """
 
-            if (
-                DATABASE_HEADER_VERSIONED_FIELDS.DATABASE_SIZE_IN_PAGES
-                not in self.database_header_differences
-            ):
+            if DATABASE_HEADER_VERSIONED_FIELDS.DATABASE_SIZE_IN_PAGES not in self.database_header_differences:
                 log_message = (
                     "The schema format number was changed from: {} to: {} and database text encoding was "
                     "changed from: {} to: {} when the database size in pages was not updated and "
@@ -1597,12 +1415,8 @@ class WriteAheadLogCommitRecord(Version):
                 raise WalCommitRecordParsingError(log_message)
 
             # Delete the entries from the dictionary
-            del database_header_differences[
-                DATABASE_HEADER_VERSIONED_FIELDS.SCHEMA_FORMAT_NUMBER
-            ]
-            del database_header_differences[
-                DATABASE_HEADER_VERSIONED_FIELDS.DATABASE_TEXT_ENCODING
-            ]
+            del database_header_differences[DATABASE_HEADER_VERSIONED_FIELDS.SCHEMA_FORMAT_NUMBER]
+            del database_header_differences[DATABASE_HEADER_VERSIONED_FIELDS.DATABASE_TEXT_ENCODING]
 
         """
 
@@ -1618,14 +1432,11 @@ class WriteAheadLogCommitRecord(Version):
         """
 
         if DATABASE_HEADER_VERSIONED_FIELDS.USER_VERSION in database_header_differences:
-
             # Set the user version modified flag
             self.user_version_modified = True
 
             # Delete the entry from the dictionary
-            del database_header_differences[
-                DATABASE_HEADER_VERSIONED_FIELDS.USER_VERSION
-            ]
+            del database_header_differences[DATABASE_HEADER_VERSIONED_FIELDS.USER_VERSION]
 
         """
 

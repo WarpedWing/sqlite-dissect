@@ -36,9 +36,7 @@ FileHandle(object)
 
 
 class FileHandle:
-    def __init__(
-        self, file_type, file_identifier, database_text_encoding=None, file_size=None
-    ):
+    def __init__(self, file_type, file_identifier, database_text_encoding=None, file_size=None):
         """
 
         Constructor.  This constructor initializes this object.
@@ -72,7 +70,6 @@ class FileHandle:
 
         xbasestring = (str, bytes)
         if isinstance(file_identifier, xbasestring):
-
             """
 
             Note: The file identifier is the name (full path) of the file if it is an instance of basestring.  We check
@@ -81,16 +78,12 @@ class FileHandle:
             """
 
             if not os.path.exists(file_identifier):
-                log_message = (
-                    f"The file name specified does not exist: {file_identifier}"
-                )
+                log_message = f"The file name specified does not exist: {file_identifier}"
                 self._logger.error(log_message)
                 raise OSError(log_message)
 
             if not os.path.isfile(file_identifier):
-                log_message = (
-                    f"The file name specified is not a file: {file_identifier}"
-                )
+                log_message = f"The file name specified is not a file: {file_identifier}"
                 self._logger.error(log_message)
                 raise OSError(log_message)
 
@@ -117,43 +110,28 @@ class FileHandle:
                 self.file_object.seek(0)
 
         if self.file_type == FILE_TYPE.DATABASE:
-
             if self.file_size > LOCK_BYTE_PAGE_START_OFFSET:
                 log_message = "The file size: {} is >= lock byte offset: {} and the lock byte page is not supported."
                 self._logger.error(log_message)
                 raise NotImplementedError(log_message)
 
             try:
-
-                database_header = DatabaseHeader(
-                    self.file_object.read(SQLITE_DATABASE_HEADER_LENGTH)
-                )
+                database_header = DatabaseHeader(self.file_object.read(SQLITE_DATABASE_HEADER_LENGTH))
 
                 if self._database_text_encoding:
                     log_message = "Database text encoding specified as: {} when should not be set."
                     self._logger.error(log_message)
                     raise ValueError(log_message)
 
-                if (
-                    database_header.database_text_encoding
-                    == UTF_8_DATABASE_TEXT_ENCODING
-                ):
+                if database_header.database_text_encoding == UTF_8_DATABASE_TEXT_ENCODING:
                     self._database_text_encoding = UTF_8
-                elif (
-                    database_header.database_text_encoding
-                    == UTF_16LE_DATABASE_TEXT_ENCODING
-                ):
+                elif database_header.database_text_encoding == UTF_16LE_DATABASE_TEXT_ENCODING:
                     self._database_text_encoding = UTF_16LE
-                elif (
-                    database_header.database_text_encoding
-                    == UTF_16BE_DATABASE_TEXT_ENCODING
-                ):
+                elif database_header.database_text_encoding == UTF_16BE_DATABASE_TEXT_ENCODING:
                     self._database_text_encoding = UTF_16BE
                 elif database_header.database_text_encoding:
                     log_message = "The database text encoding: {} is not recognized as a valid database text encoding."
-                    log_message = log_message.format(
-                        database_header.database_text_encoding
-                    )
+                    log_message = log_message.format(database_header.database_text_encoding)
                     self._logger.error(log_message)
                     raise RuntimeError(log_message)
 
@@ -165,40 +143,30 @@ class FileHandle:
                 raise
 
         elif self.file_type == FILE_TYPE.WAL:
-
             try:
-                self.header = WriteAheadLogHeader(
-                    self.file_object.read(WAL_HEADER_LENGTH)
-                )
+                self.header = WriteAheadLogHeader(self.file_object.read(WAL_HEADER_LENGTH))
             except:
                 log_message = "Failed to initialize the write ahead log header."
                 self._logger.error(log_message)
                 raise
 
         elif self.file_type == FILE_TYPE.WAL_INDEX:
-
             try:
-                self.header = WriteAheadLogIndexHeader(
-                    self.file_object.read(WAL_INDEX_HEADER_LENGTH)
-                )
+                self.header = WriteAheadLogIndexHeader(self.file_object.read(WAL_INDEX_HEADER_LENGTH))
             except:
                 log_message = "Failed to initialize the write ahead log index header."
                 self._logger.error(log_message)
                 raise
 
         elif self.file_type == FILE_TYPE.ROLLBACK_JOURNAL:
-
             try:
-                self.header = RollbackJournalHeader(
-                    self.file_object.read(ROLLBACK_JOURNAL_HEADER_LENGTH)
-                )
+                self.header = RollbackJournalHeader(self.file_object.read(ROLLBACK_JOURNAL_HEADER_LENGTH))
             except:
                 log_message = "Failed to initialize the rollback journal header."
                 self._logger.error(log_message)
                 raise
 
         else:
-
             log_message = f"Invalid file type specified: {self.file_type}."
             self._logger.error(log_message)
             raise ValueError(log_message)
@@ -210,23 +178,10 @@ class FileHandle:
         return self.stringify().replace("\t", "").replace("\n", " ")
 
     def stringify(self, padding="", print_header=True):
-        string = (
-            padding
-            + "File Type: {}\n"
-            + padding
-            + "File Size: {}\n"
-            + padding
-            + "Database Text Encoding: {}"
-        )
-        string = string.format(
-            self.file_type, self.file_size, self.database_text_encoding
-        )
+        string = padding + "File Type: {}\n" + padding + "File Size: {}\n" + padding + "Database Text Encoding: {}"
+        string = string.format(self.file_type, self.file_size, self.database_text_encoding)
         if print_header:
-            string += (
-                "\n"
-                + padding
-                + "Header:\n{}".format(self.header.stringify(padding + "\t"))
-            )
+            string += "\n" + padding + "Header:\n{}".format(self.header.stringify(padding + "\t"))
         return string
 
     @property
@@ -235,18 +190,11 @@ class FileHandle:
 
     @database_text_encoding.setter
     def database_text_encoding(self, database_text_encoding):
-
-        if (
-            self._database_text_encoding
-            and self._database_text_encoding != database_text_encoding
-        ):
+        if self._database_text_encoding and self._database_text_encoding != database_text_encoding:
             log_message = (
-                "Database text encoding is set to: {} and cannot be set differently to: {}.  "
-                "Operation not permitted."
+                "Database text encoding is set to: {} and cannot be set differently to: {}.  Operation not permitted."
             )
-            log_message = log_message.format(
-                self._database_text_encoding, database_text_encoding
-            )
+            log_message = log_message.format(self._database_text_encoding, database_text_encoding)
             self._logger.error(log_message)
             raise TypeError(log_message)
 
@@ -259,27 +207,21 @@ class FileHandle:
         self._database_text_encoding = database_text_encoding
 
     def close(self):
-
         if self.file_externally_controlled:
-
             log_message = "Ignored request to close externally controlled file."
             self._logger.warning(log_message)
             warn(log_message, RuntimeWarning)
 
         else:
-
             try:
-
                 self.file_object.close()
 
             except OSError:
-
                 log_message = "Unable to close the file object."
                 self._logger.exception(log_message)
                 raise
 
     def read_data(self, offset, number_of_bytes):
-
         if offset >= self.file_size:
             log_message = "Requested offset: {} is >= the file size: {}."
             log_message = log_message.format(offset, self.file_size)
@@ -288,14 +230,11 @@ class FileHandle:
 
         if offset + number_of_bytes > self.file_size:
             log_message = "Requested length of data: {} at offset {} to {} is > than the file size: {}."
-            log_message = log_message.format(
-                number_of_bytes, offset, number_of_bytes + offset, self.file_size
-            )
+            log_message = log_message.format(number_of_bytes, offset, number_of_bytes + offset, self.file_size)
             self._logger.error(log_message)
             raise EOFError(log_message)
 
         try:
-
             self.file_object.seek(offset)
             return self.file_object.read(int(number_of_bytes))
 

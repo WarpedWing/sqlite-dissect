@@ -14,9 +14,7 @@ def get_db_header(filepath):
 
 def find_header_changes(prev_header, current_header):
     changes = {}
-    for prev_item, current_item in zip(
-        prev_header.__dict__.items(), current_header.__dict__.items()
-    ):
+    for prev_item, current_item in zip(prev_header.__dict__.items(), current_header.__dict__.items()):
         if prev_item != current_item:
             changes[prev_item[0]] = (prev_item[1], current_item[1])
 
@@ -41,9 +39,7 @@ compare_database_header_params = [
 ]
 
 
-@pytest.mark.parametrize(
-    "prev_header, current_header, expected_changes", compare_database_header_params
-)
+@pytest.mark.parametrize("prev_header, current_header, expected_changes", compare_database_header_params)
 def test_compare_database_headers(prev_header, current_header, expected_changes):
     # If expected_changes == -1, expect a ValueError to test type matching in function
     if expected_changes == -1:

@@ -75,12 +75,7 @@ def decode_varint(byte_array, offset=0):
     varint_relative_offset = 0
 
     for x in range(1, 10):
-
-        varint_byte = ord(
-            byte_array[
-                offset + varint_relative_offset : offset + varint_relative_offset + 1
-            ]
-        )
+        varint_byte = ord(byte_array[offset + varint_relative_offset : offset + varint_relative_offset + 1])
         varint_relative_offset += 1
 
         if x == 9:
@@ -92,8 +87,7 @@ def decode_varint(byte_array, offset=0):
             unsigned_integer_value |= varint_byte
             if msb_set == 0:
                 break
-            else:
-                unsigned_integer_value <<= 7
+            unsigned_integer_value <<= 7
 
     signed_integer_value = unsigned_integer_value
     if signed_integer_value & 0x80000000 << 32:
@@ -118,7 +112,6 @@ def encode_varint(value: int):
     value += 1 << 64 if value < 0 else 0
 
     if value & 0xFF000000 << 32:
-
         byte = value & 0xFF
         byte_array.insert(0, byte)
         value >>= 8
@@ -154,11 +147,10 @@ def get_class_instance(class_name):
         for section in path_array[1:]:
             instance = getattr(instance, section)
         return instance
-    else:
-        log_message = "Class name: {} did not specify needed modules in order to initialize correctly."
-        log_message = log_message.format(log_message)
-        getLogger(LOGGER_NAME).error(log_message)
-        raise ValueError(log_message)
+    log_message = "Class name: {} did not specify needed modules in order to initialize correctly."
+    log_message = log_message.format(log_message)
+    getLogger(LOGGER_NAME).error(log_message)
+    raise ValueError(log_message)
 
 
 def get_md5_hash(string):
@@ -229,9 +221,7 @@ def get_record_content(serial_type, record_body, offset=0):
 
     # These values are not used/reserved and should not be found in sqlite files
     elif serial_type == 10 or serial_type == 11:
-        raise ValueError(
-            f"The serial type {serial_type} is not expected in SQLite files"
-        )
+        raise ValueError(f"The serial type {serial_type} is not expected in SQLite files")
 
     # A BLOB that is (N-12)/2 bytes in length
     elif serial_type >= 12 and serial_type % 2 == 0:
@@ -256,7 +246,7 @@ def get_serial_type_signature(serial_type):
     if serial_type >= 12:
         if serial_type % 2 == 0:
             return BLOB_SIGNATURE_IDENTIFIER
-        elif serial_type % 2 == 1:
+        if serial_type % 2 == 1:
             return TEXT_SIGNATURE_IDENTIFIER
     return serial_type
 
@@ -315,9 +305,7 @@ def get_sqlite_files(path: str) -> []:
                         if is_sqlite_file(relative_path):
                             sqlite_files.append(relative_path)
                         else:
-                            logging.info(
-                                f"File was found but is not a SQLite file: {relative_path}"
-                            )
+                            logging.info(f"File was found but is not a SQLite file: {relative_path}")
         else:
             if is_sqlite_file(path):
                 sqlite_files.append(path)
@@ -352,9 +340,7 @@ def hash_file(file_path: str, hash_algo=hashlib.sha256()) -> str:
     """
     # Ensure the file path exists
     if not path.exists(file_path):
-        raise OSError(
-            f"The file path {file_path} is not valid, the file does not exist"
-        )
+        raise OSError(f"The file path {file_path} is not valid, the file does not exist")
 
     with open(file_path, "rb") as f:
         while True:
@@ -370,8 +356,7 @@ def decode_str(string):
     """Python compatibility for auto-detecting encoded strings and decoding them"""
     if isinstance(string, bytes):
         return string.decode()
-    else:
-        return string
+    return string
 
 
 def append_byte_strings(str1: str, str2: str) -> str:
@@ -449,8 +434,7 @@ def parse_args(args=None):
         default=["text"],
         metavar="EXPORT_TYPE",
         env_var="SQLD_EXPORT_TYPE",
-        help="the format to export to {text, csv, sqlite, xlsx, case} (text written to console if -d "
-        "is not specified)",
+        help="the format to export to {text, csv, sqlite, xlsx, case} (text written to console if -d is not specified)",
     )
 
     journal_group = parser.add_mutually_exclusive_group()
@@ -492,8 +476,7 @@ def parse_args(args=None):
         "--tables",
         metavar="TABLES",
         env_var="SQLD_TABLES",
-        help="specified comma-delimited string of tables [table1,table2,table3] to carve "
-        "ex.) table1,table2,table3",
+        help="specified comma-delimited string of tables [table1,table2,table3] to carve ex.) table1,table2,table3",
     )
 
     parser.add_argument(
@@ -509,8 +492,7 @@ def parse_args(args=None):
         "--schema-history",
         action="store_true",
         env_var="SQLD_SCHEMA_HISTORY",
-        help="output the schema history to console, prints the --schema information and "
-        "write-head log changes",
+        help="output the schema history to console, prints the --schema information and write-head log changes",
     )
 
     parser.add_argument(
@@ -545,8 +527,7 @@ def parse_args(args=None):
         action="store_true",
         env_var="SQLD_DISABLE_STRICT_FORMAT_CHECKING",
         default=False,
-        help="disable strict format checks for SQLite databases "
-        "(this may result in improperly parsed SQLite files)",
+        help="disable strict format checks for SQLite databases (this may result in improperly parsed SQLite files)",
     )
 
     logging_group = parser.add_mutually_exclusive_group()
@@ -569,12 +550,8 @@ def parse_args(args=None):
         "(appends if file already exists)",
     )
 
-    parser.add_argument(
-        "--warnings", action="store_true", default=False, help="enable runtime warnings"
-    )
+    parser.add_argument("--warnings", action="store_true", default=False, help="enable runtime warnings")
 
-    parser.add_argument(
-        "--header", action="store_true", default=False, help="Print header information"
-    )
+    parser.add_argument("--header", action="store_true", default=False, help="Print header information")
 
     return parser.parse_args(args)

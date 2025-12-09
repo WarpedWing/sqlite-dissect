@@ -1,12 +1,11 @@
-# Initially generated with the "pyinstaller main.py --onefile" command.  Altered after for minor changes.
-# Consecutively run after modifications from the project root directory as:
-# pyinstaller pyinstaller\sqlite_dissect_linux-x64_onefile.spec
-# Please see https://github.com/pyinstaller/pyinstaller/issues/5540 if errors with the ldconfig are encountered.
+# PyInstaller spec file for macOS standalone executable (directory bundle)
+# Run from the project root directory as:
+# uv run pyinstaller pyinstaller/sqlite_dissect_macos_onedir.spec
 # -*- mode: python -*-
 
 import PyInstaller.config
 
-PyInstaller.config.CONF['distpath'] = "./dist/linux-x64/bin"
+PyInstaller.config.CONF['distpath'] = "./dist/macos"
 
 block_cipher = None
 
@@ -39,17 +38,29 @@ a = Analysis(['../main.py'],
              excludes=[],
              win_no_prefer_redirects=False,
              win_private_assemblies=False,
-             cipher=block_cipher)
+             cipher=block_cipher,
+             noarchive=False)
 pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
 exe = EXE(pyz,
           a.scripts,
-          a.binaries,
-          a.zipfiles,
-          a.datas,
+          [],
+          exclude_binaries=True,
           name='sqlite_dissect',
           debug=False,
+          bootloader_ignore_signals=False,
           strip=False,
           upx=True,
-          runtime_tmpdir=None,
-          console=True )
+          console=True,
+          disable_windowed_traceback=False,
+          target_arch=None,
+          codesign_identity=None,
+          entitlements_file=None )
+coll = COLLECT(exe,
+               a.binaries,
+               a.zipfiles,
+               a.datas,
+               strip=False,
+               upx=True,
+               upx_exclude=[],
+               name='sqlite_dissect')

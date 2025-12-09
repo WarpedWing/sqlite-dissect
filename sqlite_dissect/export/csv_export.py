@@ -10,8 +10,6 @@ from sqlite_dissect.constants import (
     MASTER_SCHEMA_ROW_TYPE,
     PAGE_TYPE,
     UTF_8,
-    UTF_16BE,
-    UTF_16LE,
 )
 from sqlite_dissect.exception import ExportError
 from sqlite_dissect.file.database.utilities import aggregate_leaf_cells
@@ -37,14 +35,12 @@ class VersionCsvExporter:
         version,
         master_schema_entry_carved_records=None,
     ):
-
         logger = getLogger(LOGGER_NAME)
 
         if not master_schema_entry_carved_records:
             master_schema_entry_carved_records = {}
 
         for master_schema_entry in version.master_schema.master_schema_entries:
-
             """
 
             Here we only care about the master schema entries that have a root page number since ones that either
@@ -55,29 +51,16 @@ class VersionCsvExporter:
             """
 
             if master_schema_entry.root_page_number:
-
                 fixed_file_name = basename(normpath(csv_file_name))
                 fixed_master_schema_name = master_schema_entry.name.replace(" ", "_")
-                csv_file_name = (
-                    export_directory
-                    + sep
-                    + fixed_file_name
-                    + "-"
-                    + fixed_master_schema_name
-                    + ".csv"
-                )
+                csv_file_name = export_directory + sep + fixed_file_name + "-" + fixed_master_schema_name + ".csv"
 
                 logger.info(f"Writing CSV file: {csv_file_name}.")
 
                 with open(csv_file_name, "wb") as csv_file_handle:
+                    csv_writer = writer(csv_file_handle, delimiter=",", quotechar='"', quoting=QUOTE_ALL)
 
-                    csv_writer = writer(
-                        csv_file_handle, delimiter=",", quotechar='"', quoting=QUOTE_ALL
-                    )
-
-                    b_tree_root_page = version.get_b_tree_root_page(
-                        master_schema_entry.root_page_number
-                    )
+                    b_tree_root_page = version.get_b_tree_root_page(master_schema_entry.root_page_number)
 
                     """
 
@@ -87,9 +70,7 @@ class VersionCsvExporter:
 
                     carved_cells = []
                     if master_schema_entry.name in master_schema_entry_carved_records:
-                        carved_cells = master_schema_entry_carved_records[
-                            master_schema_entry.name
-                        ]
+                        carved_cells = master_schema_entry_carved_records[master_schema_entry.name]
 
                     """
 
@@ -112,9 +93,7 @@ class VersionCsvExporter:
                     """
 
                     if master_schema_entry.row_type == MASTER_SCHEMA_ROW_TYPE.TABLE:
-
                         if not master_schema_entry.without_row_id:
-
                             VersionCsvExporter._write_b_tree_table_leaf_records(
                                 csv_writer,
                                 version,
@@ -124,7 +103,6 @@ class VersionCsvExporter:
                             )
 
                         else:
-
                             VersionCsvExporter._write_b_tree_index_leaf_records(
                                 csv_writer,
                                 version,
@@ -134,7 +112,6 @@ class VersionCsvExporter:
                             )
 
                     elif master_schema_entry.row_type == MASTER_SCHEMA_ROW_TYPE.INDEX:
-
                         VersionCsvExporter._write_b_tree_index_leaf_records(
                             csv_writer,
                             version,
@@ -144,7 +121,6 @@ class VersionCsvExporter:
                         )
 
                     else:
-
                         log_message = (
                             "Invalid master schema entry row type: {} found for csv export on master "
                             "schema entry name: {} table name: {} sql: {}."
@@ -160,9 +136,7 @@ class VersionCsvExporter:
                         raise ExportError(log_message)
 
     @staticmethod
-    def _write_b_tree_index_leaf_records(
-        csv_writer, version, master_schema_entry, b_tree_root_page, carved_cells
-    ):
+    def _write_b_tree_index_leaf_records(csv_writer, version, master_schema_entry, b_tree_root_page, carved_cells):
         """
 
         This function will write the list of cells sent in to the sheet specified including the metadata regarding
@@ -240,8 +214,7 @@ class VersionCsvExporter:
 
         if logger.isEnabledFor(DEBUG):
             master_schema_entry_string = (
-                "The {} b-tree page with {} row type and name: {} with sql: {} "
-                "has {} in-tact rows:"
+                "The {} b-tree page with {} row type and name: {} with sql: {} has {} in-tact rows:"
             )
             master_schema_entry_string = master_schema_entry_string.format(
                 b_tree_root_page.page_type,
@@ -278,21 +251,14 @@ class VersionCsvExporter:
         csv_writer.writerow(column_headers)
 
         for cell in cells.values():
-
             cell_record_column_values = []
 
             for record_column in cell.payload.record_columns:
                 serial_type = record_column.serial_type
-                text_affinity = (
-                    True if serial_type >= 13 and serial_type % 2 == 1 else False
-                )
+                text_affinity = True if serial_type >= 13 and serial_type % 2 == 1 else False
                 value = record_column.value
                 if isinstance(value, (bytes, bytearray, str)):
-                    value = (
-                        value.decode(version.database_text_encoding, "replace")
-                        if text_affinity
-                        else str(value)
-                    )
+                    value = value.decode(version.database_text_encoding, "replace") if text_affinity else str(value)
                     try:
                         value.encode(UTF_8)
                     except UnicodeDecodeError:
@@ -342,14 +308,10 @@ class VersionCsvExporter:
                 log_message += "(" + ", ".join(cell_record_column_values) + ")"
                 logger.debug(log_message)
 
-        VersionCsvExporter._write_b_tree_table_master_schema_carved_records(
-            csv_writer, version, carved_cells, False
-        )
+        VersionCsvExporter._write_b_tree_table_master_schema_carved_records(csv_writer, version, carved_cells, False)
 
     @staticmethod
-    def _write_b_tree_table_leaf_records(
-        csv_writer, version, master_schema_entry, b_tree_root_page, carved_cells
-    ):
+    def _write_b_tree_table_leaf_records(csv_writer, version, master_schema_entry, b_tree_root_page, carved_cells):
         """
 
         This function will write the list of cells sent in to the sheet specified including the metadata regarding
@@ -427,8 +389,7 @@ class VersionCsvExporter:
 
         if logger.isEnabledFor(DEBUG):
             master_schema_entry_string = (
-                "The {} b-tree page with {} row type and name: {} with sql: {} "
-                "has {} in-tact rows:"
+                "The {} b-tree page with {} row type and name: {} with sql: {} has {} in-tact rows:"
             )
             master_schema_entry_string = master_schema_entry_string.format(
                 b_tree_root_page.page_type,
@@ -455,36 +416,24 @@ class VersionCsvExporter:
             ]
         )
         column_headers.extend(
-            [
-                column_definition.column_name
-                for column_definition in master_schema_entry.column_definitions
-            ]
+            [column_definition.column_name for column_definition in master_schema_entry.column_definitions]
         )
 
         logger.debug("Column Headers: {}".format(" , ".join(column_headers)))
 
         csv_writer.writerow(column_headers)
 
-        sorted_cells = sorted(
-            cells.values(), key=lambda b_tree_cell: b_tree_cell.row_id
-        )
+        sorted_cells = sorted(cells.values(), key=lambda b_tree_cell: b_tree_cell.row_id)
 
         for cell in sorted_cells:
-
             cell_record_column_values = []
 
             for record_column in cell.payload.record_columns:
                 serial_type = record_column.serial_type
-                text_affinity = (
-                    True if serial_type >= 13 and serial_type % 2 == 1 else False
-                )
+                text_affinity = True if serial_type >= 13 and serial_type % 2 == 1 else False
                 value = record_column.value
                 if isinstance(value, (bytes, bytearray, str)):
-                    value = (
-                        value.decode(version.database_text_encoding, "replace")
-                        if text_affinity
-                        else str(value)
-                    )
+                    value = value.decode(version.database_text_encoding, "replace") if text_affinity else str(value)
                     try:
                         value = value.encode(UTF_8)
                     except UnicodeDecodeError:
@@ -536,33 +485,21 @@ class VersionCsvExporter:
                 log_message += "(" + ", ".join(cell_record_column_values) + ")"
                 logger.debug(log_message)
 
-        VersionCsvExporter._write_b_tree_table_master_schema_carved_records(
-            csv_writer, version, carved_cells, True
-        )
+        VersionCsvExporter._write_b_tree_table_master_schema_carved_records(csv_writer, version, carved_cells, True)
 
     @staticmethod
-    def _write_b_tree_table_master_schema_carved_records(
-        csv_writer, version, carved_cells, has_row_ids
-    ):
-
+    def _write_b_tree_table_master_schema_carved_records(csv_writer, version, carved_cells, has_row_ids):
         logger = getLogger(LOGGER_NAME)
 
         for carved_cell in carved_cells:
-
             cell_record_column_values = []
 
             for record_column in carved_cell.payload.record_columns:
                 serial_type = record_column.serial_type
-                text_affinity = (
-                    True if serial_type >= 13 and serial_type % 2 == 1 else False
-                )
+                text_affinity = True if serial_type >= 13 and serial_type % 2 == 1 else False
                 value = record_column.value
                 if isinstance(value, (bytes, bytearray, str)):
-                    value = (
-                        value.decode(version.database_text_encoding, "replace")
-                        if text_affinity
-                        else str(value)
-                    )
+                    value = value.decode(version.database_text_encoding, "replace") if text_affinity else str(value)
                     try:
                         value = value.encode(UTF_8)
                     except UnicodeDecodeError:
@@ -640,11 +577,7 @@ class CommitCsvExporter:
         logger = getLogger(LOGGER_NAME)
 
         mode = "a"
-        csv_file_name = (
-            self._csv_file_names[commit.name]
-            if commit.name in self._csv_file_names
-            else None
-        )
+        csv_file_name = self._csv_file_names[commit.name] if commit.name in self._csv_file_names else None
         write_headers = False
 
         if not csv_file_name:
@@ -659,10 +592,7 @@ class CommitCsvExporter:
             write_headers = True
 
         with open(csv_file_name, mode, newline="") as csv_file_handle:
-
-            csv_writer = writer(
-                csv_file_handle, delimiter=",", quotechar='"', quoting=QUOTE_ALL
-            )
+            csv_writer = writer(csv_file_handle, delimiter=",", quotechar='"', quoting=QUOTE_ALL)
 
             """
 
@@ -698,7 +628,6 @@ class CommitCsvExporter:
                 )
 
             if commit.page_type == PAGE_TYPE.B_TREE_INDEX_LEAF:
-
                 """
 
                 Note:  The index master schema entries are currently not fully parsed and therefore we do not have
@@ -741,18 +670,11 @@ class CommitCsvExporter:
                     "Carved",
                 )
 
-            elif (
-                commit.page_type == PAGE_TYPE.B_TREE_TABLE_LEAF
-                or commit.page_type == PAGE_TYPE.B_TREE_TABLE_INTERIOR
-            ):
-
+            elif commit.page_type == PAGE_TYPE.B_TREE_TABLE_LEAF or commit.page_type == PAGE_TYPE.B_TREE_TABLE_INTERIOR:
                 if write_headers:
                     column_headers.append("Row ID")
                     column_headers.extend(
-                        [
-                            column_definition.column_name
-                            for column_definition in master_schema_entry.column_definitions
-                        ]
+                        [column_definition.column_name for column_definition in master_schema_entry.column_definitions]
                     )
                     if isinstance(column_headers, str):
                         csv_writer.writerow([column_headers])
@@ -808,21 +730,16 @@ class CommitCsvExporter:
                 )
 
             else:
-
                 log_message = (
                     "Invalid commit page type: {} found for csv export on master "
                     "schema entry name: {} while writing to csv file name: {}."
                 )
-                log_message = log_message.format(
-                    commit.page_type, commit.name, csv_file_name
-                )
+                log_message = log_message.format(commit.page_type, commit.name, csv_file_name)
                 logger.warning(log_message)
                 raise ExportError(log_message)
 
     @staticmethod
-    def _write_cells(
-        csv_writer, file_type, database_text_encoding, page_type, cells, operation
-    ):
+    def _write_cells(csv_writer, file_type, database_text_encoding, page_type, cells, operation):
         """
 
         This function will write the list of cells sent in to the sheet specified including the metadata regarding
@@ -897,20 +814,13 @@ class CommitCsvExporter:
         """
 
         for cell in cells:
-
             cell_record_column_values = []
             for record_column in cell.payload.record_columns:
                 serial_type = record_column.serial_type
-                text_affinity = (
-                    True if serial_type >= 13 and serial_type % 2 == 1 else False
-                )
+                text_affinity = True if serial_type >= 13 and serial_type % 2 == 1 else False
                 value = record_column.value
                 if isinstance(value, (bytes, bytearray, str)):
-                    value = (
-                        value.decode(database_text_encoding, "replace")
-                        if text_affinity
-                        else str(value)
-                    )
+                    value = value.decode(database_text_encoding, "replace") if text_affinity else str(value)
                     try:
                         value = value.encode(UTF_8)
                     except UnicodeDecodeError:

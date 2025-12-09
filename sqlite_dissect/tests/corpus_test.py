@@ -6,7 +6,6 @@ import sys
 import pytest
 
 from sqlite_dissect.entrypoint import main
-from sqlite_dissect.exception import MasterSchemaParsingError
 from sqlite_dissect.tests.constants import DB_FILES
 from sqlite_dissect.tests.utilities import parse_csv, parse_schema
 from sqlite_dissect.utilities import get_sqlite_files, parse_args
@@ -1039,9 +1038,7 @@ test_corpus_params = [
 ]
 
 
-@pytest.mark.parametrize(
-    "file_name, first_field, expected_schema, expected_rows", test_corpus_params
-)
+@pytest.mark.parametrize("file_name, first_field, expected_schema, expected_rows", test_corpus_params)
 def test_corpus(tmp_path, file_name, first_field, expected_schema, expected_rows):
     args = parse_args(
         [
@@ -1072,8 +1069,7 @@ def test_corpus(tmp_path, file_name, first_field, expected_schema, expected_rows
 
             return
 
-        else:
-            main(args, sqlite_files[0], len(sqlite_files) > 1)
+        main(args, sqlite_files[0], len(sqlite_files) > 1)
 
     with open(str(tmp_path / (file_name + ".txt"))) as stdout:
         schema = parse_schema(stdout.read())

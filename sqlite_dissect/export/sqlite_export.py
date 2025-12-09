@@ -3,6 +3,7 @@ from os import rename
 from os.path import exists, sep
 from sqlite3 import connect, sqlite_version, version
 from uuid import uuid4
+from warnings import warn
 
 from sqlite_dissect.constants import LOGGER_NAME, PAGE_TYPE
 from sqlite_dissect.exception import ExportError
@@ -21,6 +22,26 @@ This script holds the following object(s):
 CommitSqliteExporter(object)
 
 """
+
+
+def _quote_identifier(identifier):
+    """
+    Properly quote a SQL identifier (table name, column name) for SQLite.
+
+    SQLite identifiers containing special characters (hyphens, spaces, etc.) must be
+    quoted with double quotes. Any existing double quotes in the name are escaped
+    by doubling them.
+
+    :param identifier: The identifier to quote
+    :return: The properly quoted identifier
+    """
+    if identifier is None:
+        return '""'
+    # Convert to string in case of non-string types
+    identifier = str(identifier)
+    # Escape any existing double quotes by doubling them
+    escaped = identifier.replace('"', '""')
+    return f'"{escaped}"'
 
 
 class CommitSqliteExporter:
@@ -55,14 +76,10 @@ class CommitSqliteExporter:
         self._master_schema_entries_created_tables = {}
 
     def __enter__(self):
-
         # Check if the file exists and if it does rename it
         if exists(self._sqlite_file_name):
-
             # Generate a uuid to append to the file name
-            new_file_name_for_existing_file = (
-                self._sqlite_file_name + "-" + str(uuid4())
-            )
+            new_file_name_for_existing_file = self._sqlite_file_name + "-" + str(uuid4())
 
             # Rename the existing file
             rename(self._sqlite_file_name, new_file_name_for_existing_file)
@@ -71,29 +88,19 @@ class CommitSqliteExporter:
                 "File: {} already existing when creating the file for commit sqlite exporting.  The "
                 "file was renamed to: {} and new data will be written to the file name specified."
             )
-            log_message = log_message.format(
-                self._sqlite_file_name, new_file_name_for_existing_file
-            )
+            log_message = log_message.format(self._sqlite_file_name, new_file_name_for_existing_file)
             getLogger(LOGGER_NAME).debug(log_message)
 
         self._connection = connect(self._sqlite_file_name)
-        log_message = (
-            "Opened connection to {} using sqlite version: {} and pysqlite version: {}"
-        )
-        log_message = log_message.format(
-            self._sqlite_file_name, sqlite_version, version
-        )
+        log_message = "Opened connection to {} using sqlite version: {} and pysqlite version: {}"
+        log_message = log_message.format(self._sqlite_file_name, sqlite_version, version)
         getLogger(LOGGER_NAME).debug(log_message)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._connection.close()
-        log_message = (
-            "Closed connection to {} using sqlite version: {} and pysqlite version: {}"
-        )
-        log_message = log_message.format(
-            self._sqlite_file_name, sqlite_version, version
-        )
+        log_message = "Closed connection to {} using sqlite version: {} and pysqlite version: {}"
+        log_message = log_message.format(self._sqlite_file_name, sqlite_version, version)
         getLogger(LOGGER_NAME).debug(log_message)
 
     def write_commit(self, master_schema_entry, commit):
@@ -125,15 +132,10 @@ class CommitSqliteExporter:
             if hasattr(master_schema_entry, "internal_schema_object")
             else False
         )
-        table_name = (
-            "iso_" + master_schema_entry.name
-            if internal_schema_object
-            else master_schema_entry.name
-        )
+        table_name = "iso_" + master_schema_entry.name if internal_schema_object else master_schema_entry.name
 
         # Check if we have created the table for this master schema entry name yet
         if master_schema_entry.name not in self._master_schema_entries_created_tables:
-
             column_headers = [
                 "File Source",
                 "Version",
@@ -164,7 +166,6 @@ class CommitSqliteExporter:
             """
 
             if commit.page_type == PAGE_TYPE.B_TREE_INDEX_LEAF:
-
                 """
 
                 Note:  The index master schema entries are currently not fully parsed and therefore we do not have
@@ -206,16 +207,11 @@ class CommitSqliteExporter:
                     index_column_headers.append(f"Column {i}")
 
                 column_headers.extend(index_column_headers)
-                column_headers = [
-                    column_header.replace(" ", "_").lower()
-                    for column_header in column_headers
-                ]
+                column_headers = [column_header.replace(" ", "_").lower() for column_header in column_headers]
 
             elif commit.page_type == PAGE_TYPE.B_TREE_TABLE_LEAF:
-
                 column_definitions = [
-                    column_definition.column_name
-                    for column_definition in master_schema_entry.column_definitions
+                    column_definition.column_name for column_definition in master_schema_entry.column_definitions
                 ]
                 column_headers.append("Row ID")
 
@@ -228,9 +224,7 @@ class CommitSqliteExporter:
 
                 updated_column_headers = []
                 for column_header in column_headers:
-                    updated_column_header_name = (
-                        "sd_" + column_header.replace(" ", "_").lower()
-                    )
+                    updated_column_header_name = "sd_" + column_header.replace(" ", "_").lower()
                     while updated_column_header_name in column_definitions:
                         updated_column_header_name = "sd_" + updated_column_header_name
                     updated_column_headers.append(updated_column_header_name)
@@ -239,27 +233,22 @@ class CommitSqliteExporter:
                 column_headers = updated_column_headers
 
             else:
-
                 log_message = (
                     "Invalid commit page type: {} found for sqlite export on master "
                     "schema entry name: {} while writing to sqlite file name: {}."
                 )
-                log_message = log_message.format(
-                    commit.page_type, commit.name, self._sqlite_file_name
-                )
+                log_message = log_message.format(commit.page_type, commit.name, self._sqlite_file_name)
                 logger.warning(log_message)
                 raise ExportError(log_message)
 
-            create_table_statement = "CREATE TABLE {} ({})"
-            create_table_statement = create_table_statement.format(
-                table_name, " ,".join(column_headers)
-            )
+            # Quote table name and column headers to handle special characters (hyphens, spaces, etc.)
+            quoted_table_name = _quote_identifier(table_name)
+            quoted_column_headers = [_quote_identifier(col) for col in column_headers]
+            create_table_statement = "CREATE TABLE {} ({})".format(quoted_table_name, ", ".join(quoted_column_headers))
             self._connection.execute(create_table_statement)
             self._connection.commit()
 
-            self._master_schema_entries_created_tables[master_schema_entry.name] = len(
-                column_headers
-            )
+            self._master_schema_entries_created_tables[master_schema_entry.name] = len(column_headers)
 
         """
 
@@ -267,12 +256,9 @@ class CommitSqliteExporter:
 
         """
 
-        column_count = self._master_schema_entries_created_tables[
-            master_schema_entry.name
-        ]
+        column_count = self._master_schema_entries_created_tables[master_schema_entry.name]
 
         if commit.page_type == PAGE_TYPE.B_TREE_INDEX_LEAF:
-
             CommitSqliteExporter._write_cells(
                 self._connection,
                 table_name,
@@ -315,11 +301,8 @@ class CommitSqliteExporter:
             )
 
         elif commit.page_type == PAGE_TYPE.B_TREE_TABLE_LEAF:
-
             # Sort the added, updated, and deleted cells by the row id
-            sorted_added_cells = sorted(
-                commit.added_cells.values(), key=lambda b_tree_cell: b_tree_cell.row_id
-            )
+            sorted_added_cells = sorted(commit.added_cells.values(), key=lambda b_tree_cell: b_tree_cell.row_id)
             CommitSqliteExporter._write_cells(
                 self._connection,
                 table_name,
@@ -372,14 +355,11 @@ class CommitSqliteExporter:
             )
 
         else:
-
             log_message = (
                 "Invalid commit page type: {} found for sqlite export on master "
                 "schema entry name: {} while writing to sqlite file name: {}."
             )
-            log_message = log_message.format(
-                commit.page_type, commit.name, self._sqlite_file_name
-            )
+            log_message = log_message.format(commit.page_type, commit.name, self._sqlite_file_name)
             logger.warning(log_message)
             raise ExportError(log_message)
 
@@ -458,17 +438,13 @@ class CommitSqliteExporter:
         """
 
         if cells:
-
             entries = []
 
             for cell in cells:
-
                 cell_record_column_values = []
                 for record_column in cell.payload.record_columns:
                     serial_type = record_column.serial_type
-                    text_affinity = (
-                        True if serial_type >= 13 and serial_type % 2 == 1 else False
-                    )
+                    text_affinity = True if serial_type >= 13 and serial_type % 2 == 1 else False
                     value = record_column.value
 
                     if isinstance(value, bytearray):
@@ -483,7 +459,6 @@ class CommitSqliteExporter:
                             else:
                                 value = memoryview(value)
                         except UnicodeDecodeError:
-
                             """
 
                             Note:  Here we do not decode or encode the value, since the above failed the value will
@@ -521,13 +496,12 @@ class CommitSqliteExporter:
                     log_message = (
                         "The number of columns found in the row: {} were more than the expected: {} "
                         "for sqlite export on master schema entry name: {} with file type: {} "
-                        "and page type: {}."
+                        "and page type: {}. Truncating row to expected column count."
                     )
-                    log_message = log_message.format(
-                        len(row), column_count, table_name, file_type, page_type
-                    )
-                    getLogger(LOGGER_NAME).warn(log_message)
-                    raise ExportError(log_message)
+                    log_message = log_message.format(len(row), column_count, table_name, file_type, page_type)
+                    getLogger(LOGGER_NAME).warning(log_message)
+                    warn(log_message, RuntimeWarning)
+                    row = row[:column_count]
 
                 entries.append(tuple(row))
 
@@ -543,5 +517,6 @@ class CommitSqliteExporter:
             number_of_rows = len(entries[0]) - 1
 
             column_fields = "?" + (", ?" * number_of_rows)
-            insert_statement = f"INSERT INTO {table_name} VALUES ({column_fields})"
+            quoted_table_name = _quote_identifier(table_name)
+            insert_statement = f"INSERT INTO {quoted_table_name} VALUES ({column_fields})"
             connection.executemany(insert_statement, entries)

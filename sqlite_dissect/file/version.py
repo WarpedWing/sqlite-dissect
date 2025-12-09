@@ -38,13 +38,9 @@ Version(object)
 
 
 class Version:
-
     __metaclass__ = ABCMeta
 
-    def __init__(
-        self, file_handle, version_number, store_in_memory, strict_format_checking
-    ):
-
+    def __init__(self, file_handle, version_number, store_in_memory, strict_format_checking):
         self._logger = getLogger(LOGGER_NAME)
 
         self.file_handle = file_handle
@@ -210,16 +206,10 @@ class Version:
         )
         if print_pages:
             for page in self.pages.values():
-                string += (
-                    "\n" + padding + "Page:\n{}".format(page.stringify(padding + "\t"))
-                )
+                string += "\n" + padding + "Page:\n{}".format(page.stringify(padding + "\t"))
         if print_schema:
             string += (
-                "\n"
-                + padding
-                + "Master Schema:\n{}".format(
-                    self.master_schema.stringify(padding + "\t", print_pages)
-                )
+                "\n" + padding + "Master Schema:\n{}".format(self.master_schema.stringify(padding + "\t", print_pages))
             )
         return string
 
@@ -238,11 +228,7 @@ class Version:
     @property
     def database_header(self):
         if not self._database_header:
-            return DatabaseHeader(
-                self.get_page_data(SQLITE_MASTER_SCHEMA_ROOT_PAGE)[
-                    :SQLITE_DATABASE_HEADER_LENGTH
-                ]
-            )
+            return DatabaseHeader(self.get_page_data(SQLITE_MASTER_SCHEMA_ROOT_PAGE)[:SQLITE_DATABASE_HEADER_LENGTH])
         return self._database_header
 
     @property
@@ -259,7 +245,6 @@ class Version:
 
     @property
     def pages(self):
-
         # Return the pages if they are being stored in memory and already parsed
         if self._pages:
             return self._pages
@@ -292,9 +277,7 @@ class Version:
             pages[master_schema_page.number] = master_schema_page
 
         # Populate the b-trees from the master schema including the root page
-        for (
-            b_tree_root_page_number
-        ) in master_schema.master_schema_b_tree_root_page_numbers:
+        for b_tree_root_page_number in master_schema.master_schema_b_tree_root_page_numbers:
             b_tree_root_page = self.get_b_tree_root_page(b_tree_root_page_number)
             for b_tree_page in get_pages_from_b_tree_page(b_tree_root_page):
                 pages[b_tree_page.number] = b_tree_page
@@ -304,22 +287,14 @@ class Version:
 
         if number_of_pages != self.database_size_in_pages:
             log_message = "The number of pages: {} did not match the database size in pages: {} for version: {}."
-            log_message = log_message.format(
-                number_of_pages, self.database_size_in_pages, self.version_number
-            )
+            log_message = log_message.format(number_of_pages, self.database_size_in_pages, self.version_number)
             self._logger.error(log_message)
             raise VersionParsingError(log_message)
 
-        for page_number in [
-            page_index + 1 for page_index in range(int(self.database_size_in_pages))
-        ]:
+        for page_number in [page_index + 1 for page_index in range(int(self.database_size_in_pages))]:
             if page_number not in pages:
-                log_message = (
-                    "Page number: {} was not found in the pages: {} for version: {}."
-                )
-                log_message = log_message.format(
-                    page_number, pages.keys(), self.version_number
-                )
+                log_message = "Page number: {} was not found in the pages: {} for version: {}."
+                log_message = log_message.format(page_number, pages.keys(), self.version_number)
                 self._logger.error(log_message)
                 raise VersionParsingError(log_message)
 
@@ -354,7 +329,6 @@ class Version:
 
         # Return the page if it is already being in memory and already parsed
         if self._pages:
-
             b_tree_root_page = self._pages[b_tree_page_number]
 
             # Make sure the page is a b-tree page
@@ -365,9 +339,7 @@ class Version:
                 PAGE_TYPE.B_TREE_INDEX_LEAF,
             ]:
                 log_message = "The b-tree page number: {} is not a b-tree page but instead has a type of: {}."
-                log_message = log_message.format(
-                    b_tree_page_number, b_tree_root_page.page_type
-                )
+                log_message = log_message.format(b_tree_page_number, b_tree_root_page.page_type)
                 self._logger.error(log_message)
                 raise ValueError(log_message)
 
@@ -377,7 +349,6 @@ class Version:
         page_hex_type = self.get_page_data(b_tree_page_number, 0, PAGE_TYPE_LENGTH)
 
         if page_hex_type == MASTER_PAGE_HEX_ID:
-
             # Make sure this is the sqlite master schema root page
             if b_tree_page_number != SQLITE_MASTER_SCHEMA_ROOT_PAGE:
                 log_message = "The b-tree page number: {} contains the master page hex but is not page number: {}."
@@ -385,9 +356,7 @@ class Version:
                 self._logger.error(log_message)
                 raise VersionParsingError(log_message)
 
-            page_hex_type = self.get_page_data(
-                b_tree_page_number, SQLITE_DATABASE_HEADER_LENGTH, PAGE_TYPE_LENGTH
-            )
+            page_hex_type = self.get_page_data(b_tree_page_number, SQLITE_DATABASE_HEADER_LENGTH, PAGE_TYPE_LENGTH)
 
             # If this is the sqlite master schema root page then this page has to be a table interior or leaf page
             if page_hex_type not in [
@@ -398,55 +367,43 @@ class Version:
                     "The b-tree page number: {} contains the master page hex but has hex type: {} which "
                     "is not the expected table interior or table leaf page hex."
                 )
-                log_message = log_message.format(
-                    b_tree_page_number, hexlify(page_hex_type)
-                )
+                log_message = log_message.format(b_tree_page_number, hexlify(page_hex_type))
                 self._logger.error(log_message)
                 raise VersionParsingError(log_message)
 
         # Check if it was a b-tree table interior
         if page_hex_type == TABLE_INTERIOR_PAGE_HEX_ID:
-
             # Create the table interior page
             return TableInteriorPage(self, b_tree_page_number)
 
         # Check if it was a b-tree table leaf
-        elif page_hex_type == TABLE_LEAF_PAGE_HEX_ID:
-
+        if page_hex_type == TABLE_LEAF_PAGE_HEX_ID:
             # Create the table leaf page
             return TableLeafPage(self, b_tree_page_number)
 
         # Check if it was a b-tree index interior
-        elif page_hex_type == INDEX_INTERIOR_PAGE_HEX_ID:
-
+        if page_hex_type == INDEX_INTERIOR_PAGE_HEX_ID:
             # Create the table interior page
             return IndexInteriorPage(self, b_tree_page_number)
 
         # Check if it was a b-tree index leaf
-        elif page_hex_type == INDEX_LEAF_PAGE_HEX_ID:
-
+        if page_hex_type == INDEX_LEAF_PAGE_HEX_ID:
             # Create the table leaf page
             return IndexLeafPage(self, b_tree_page_number)
 
         # Throw an exception since the type of the b-tree page was not a b-tree hex type
-        else:
 
-            log_message = "The b-tree page number: {} did not refer to a b-tree page but rather a page of hex type: {}."
-            log_message = log_message.format(hexlify(page_hex_type))
-            self._logger.error(log_message)
-            raise ValueError(log_message)
+        log_message = "The b-tree page number: {} did not refer to a b-tree page but rather a page of hex type: {}."
+        log_message = log_message.format(hexlify(page_hex_type))
+        self._logger.error(log_message)
+        raise ValueError(log_message)
 
     def get_page_version(self, page_number):
-
         try:
-
             return self.page_version_index[page_number]
 
         except KeyError:
-
             log_message = "The page number: {} was not found in the page version index: {} for version: {}."
-            log_message = log_message.format(
-                page_number, self.page_version_index, self.version_number
-            )
+            log_message = log_message.format(page_number, self.page_version_index, self.version_number)
             self._logger.error(log_message)
             raise

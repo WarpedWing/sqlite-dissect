@@ -1,18 +1,12 @@
 import io
 import sqlite3
-import sys
 from contextlib import redirect_stdout
 from hashlib import md5
-from io import StringIO
 
 import pytest
 
 import sqlite_dissect.tests.nist_assertions as nist_assertions
-from sqlite_dissect.constants import FILE_TYPE
 from sqlite_dissect.entrypoint import main
-from sqlite_dissect.tests import nist_assertions
-from sqlite_dissect.tests.constants import LOG_FILES
-from sqlite_dissect.tests.utilities import db_file, parse_csv
 from sqlite_dissect.utilities import get_sqlite_files, parse_args
 
 
@@ -68,16 +62,10 @@ def test_header_reporting(db_file):
 
         hash_after_parsing = get_md5_hash(db_filepath)
 
-        nist_assertions.assert_md5_equals(
-            hash_before_parsing, hash_after_parsing, db_file[0].name
-        )
+        nist_assertions.assert_md5_equals(hash_before_parsing, hash_after_parsing, db_file[0].name)
         nist_assertions.assert_file_exists(db_filepath)
         nist_assertions.assert_correct_page_size(reported_page_size, actual_page_size)
-        nist_assertions.assert_correct_journal_mode(
-            reported_journal_mode_read, actual_journal_mode, "r"
-        )
-        nist_assertions.assert_correct_journal_mode(
-            reported_journal_mode_write, actual_journal_mode, "w"
-        )
+        nist_assertions.assert_correct_journal_mode(reported_journal_mode_read, actual_journal_mode, "r")
+        nist_assertions.assert_correct_journal_mode(reported_journal_mode_write, actual_journal_mode, "w")
         nist_assertions.assert_correct_num_pages(reported_num_pages, actual_num_pages)
         nist_assertions.assert_correct_encoding(reported_encoding, actual_encoding)

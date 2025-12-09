@@ -1,0 +1,118 @@
+[project]
+name = "sqlite-dissect"
+version = "1.0.0"
+description = "SQLite forensic dissection and carving tool for database analysis and recovery"
+readme = "README.md"
+license = { file = "LICENSE.txt" }
+requires-python = ">=3.12"
+dependencies = [
+    "configargparse>=1.7.1",
+    "openpyxl>=3.1.5",
+]
+authors = [
+    { name = "SQLite Dissect Contributors" }
+]
+keywords = ["sqlite", "forensics", "database", "recovery", "carving"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: System Administrators",
+    "Topic :: Database",
+    "Topic :: Security",
+    "Topic :: Utilities",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+
+[project.scripts]
+sqlite_dissect = "sqlite_dissect.entrypoint:cli"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    ".venv",
+    "venv",
+    "setuptools",
+    "dist",
+    "build",
+    ".git",
+    ".pytest_cache",
+    "*.pyc",
+    "*.pyo",
+    "__pycache__",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["sqlite_dissect"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "W",
+    "I",
+    "UP",
+    "C4",
+    "FA",
+    "ISC",
+    "ICN",
+]
+
+extend-select = [
+    "RET",
+    "SIM",
+    "TID",
+    "TC",
+    "PTH",
+    "TD",
+    "NPY",
+]
+
+ignore = [
+    "B011",
+    "E501",
+    "TD003",
+    "RET504",
+]
+
+[tool.basedpyright]
+include = ["sqlite_dissect"]
+exclude = [
+    "**/__pycache__",
+]
+
+# "off" | "basic" | "standard" | "strict"
+typeCheckingMode = "basic"
+
+reportGeneralTypeIssues = "error"
+reportOptionalMemberAccess = "error"
+reportOptionalSubscript = "error"
+reportOptionalCall = "error"
+
+reportMissingTypeStubs = "none"
+reportUnknownMemberType = "none"
+reportUnknownVariableType = "none"
+reportUnknownArgumentType = "none"
+reportUnknownParameterType = "none"
+reportUnknownLambdaType = "none"
+reportUnusedVariable = false
+
+reportUnusedImport = "warning"
+reportUnusedFunction = "none"
+reportPrivateUsage = "none"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "ruff>=0.8.0",
+    "pyinstaller>=6.0.0",
+]

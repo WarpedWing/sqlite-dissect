@@ -17,7 +17,6 @@ TableConstraint(object)
 
 class TableConstraint:
     def __init__(self, index, constraint, comments=None):
-
         logger = getLogger(LOGGER_NAME)
 
         self.index = index

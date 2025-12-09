@@ -5,7 +5,6 @@ from sqlite_dissect.constants import (
     BLOB_SIGNATURE_IDENTIFIER,
     LOGGER_NAME,
     TEXT_SIGNATURE_IDENTIFIER,
-    UTF_8,
 )
 from sqlite_dissect.exception import CarvingError, InvalidVarIntError
 from sqlite_dissect.utilities import decode_varint
@@ -69,21 +68,14 @@ def decode_varint_in_reverse(byte_array: bytearray, offset: int, max_varint_leng
     varint_inverted_relative_offset = 0
 
     varint_byte = ord(
-        byte_array[
-            offset
-            - 1
-            - varint_inverted_relative_offset : offset
-            - varint_inverted_relative_offset
-        ]
+        byte_array[offset - 1 - varint_inverted_relative_offset : offset - varint_inverted_relative_offset]
     )
     varint_byte &= 0x7F
     unsigned_integer_value |= varint_byte
     varint_inverted_relative_offset += 1
 
     while offset - varint_inverted_relative_offset - 1 >= 0:
-
         if varint_inverted_relative_offset > max_varint_length:
-
             """
 
             Since this exception is not considered a important exception to log as an error, it will be logged
@@ -98,12 +90,7 @@ def decode_varint_in_reverse(byte_array: bytearray, offset: int, max_varint_leng
             return InvalidVarIntError(log_message)
 
         varint_byte = ord(
-            byte_array[
-                offset
-                - 1
-                - varint_inverted_relative_offset : offset
-                - varint_inverted_relative_offset
-            ]
+            byte_array[offset - 1 - varint_inverted_relative_offset : offset - varint_inverted_relative_offset]
         )
         msb_set = varint_byte & 0x80
         if msb_set:
@@ -123,25 +110,18 @@ def calculate_body_content_size(serial_type_header):
     body_content_size = 0
     start_offset = 0
     while start_offset < len(serial_type_header):
-        serial_type, serial_type_varint_length = decode_varint(
-            serial_type_header, start_offset
-        )
+        serial_type, serial_type_varint_length = decode_varint(serial_type_header, start_offset)
         body_content_size += get_content_size(serial_type)
         start_offset += serial_type_varint_length
         if start_offset > len(serial_type_header):
             log_message = "Invalid start offset: {} retrieved from serial type header of length: {}: {}."
-            log_message = log_message.format(
-                start_offset, len(serial_type_header), hexlify(serial_type_header)
-            )
+            log_message = log_message.format(start_offset, len(serial_type_header), hexlify(serial_type_header))
             getLogger(LOGGER_NAME).error(log_message)
             raise CarvingError(log_message)
     return body_content_size
 
 
-def calculate_serial_type_definition_content_length_min_max(
-    simplified_serial_types=None, allowed_varint_length=5
-):
-
+def calculate_serial_type_definition_content_length_min_max(simplified_serial_types=None, allowed_varint_length=5):
     content_max_length = int("1111111" * allowed_varint_length, 2)
 
     if not simplified_serial_types:
@@ -155,9 +135,7 @@ def calculate_serial_type_definition_content_length_min_max(
             BLOB_SIGNATURE_IDENTIFIER,
             TEXT_SIGNATURE_IDENTIFIER,
         ]:
-            serial_type_definition_content_length_min = min(
-                serial_type_definition_content_length_min, 1
-            )
+            serial_type_definition_content_length_min = min(serial_type_definition_content_length_min, 1)
             serial_type_definition_content_length_max = max(
                 serial_type_definition_content_length_max, content_max_length
             )
@@ -177,12 +155,10 @@ def calculate_serial_type_definition_content_length_min_max(
 
 
 def calculate_serial_type_varint_length_min_max(simplified_serial_types):
-
     serial_type_varint_length_min = 5
     serial_type_varint_length_max = 1
 
     for simplified_serial_type in simplified_serial_types:
-
         if simplified_serial_type in [
             BLOB_SIGNATURE_IDENTIFIER,
             TEXT_SIGNATURE_IDENTIFIER,
@@ -211,18 +187,15 @@ def generate_regex_for_simplified_serial_type(simplified_serial_type):
     """
 
     if simplified_serial_type == -2:
-        return b"(?:[\x0C-\x7F]|[\x80-\xFF]{1,7}[\x00-\x7F])"
-    elif simplified_serial_type == -1:
-        return b"(?:[\x0D-\x7F]|[\x80-\xFF]{1,7}[\x00-\x7F])"
-    elif 0 <= simplified_serial_type <= 9:
+        return b"(?:[\x0c-\x7f]|[\x80-\xff]{1,7}[\x00-\x7f])"
+    if simplified_serial_type == -1:
+        return b"(?:[\x0d-\x7f]|[\x80-\xff]{1,7}[\x00-\x7f])"
+    if 0 <= simplified_serial_type <= 9:
         return unhexlify(f"0{simplified_serial_type}")
-    else:
-        log_message = (
-            "Unable to generate regular expression for simplified serial type: {}."
-        )
-        log_message = log_message.format(simplified_serial_type)
-        getLogger(LOGGER_NAME).error(log_message)
-        raise CarvingError(log_message)
+    log_message = "Unable to generate regular expression for simplified serial type: {}."
+    log_message = log_message.format(simplified_serial_type)
+    getLogger(LOGGER_NAME).error(log_message)
+    raise CarvingError(log_message)
 
 
 def generate_signature_regex(signature: list, skip_first_serial_type: bool = False):
@@ -255,17 +228,14 @@ def generate_signature_regex(signature: list, skip_first_serial_type: bool = Fal
         signature = signature[1:]
 
     for column_serial_type_array in signature:
-
         number_of_possible_serial_types = len(column_serial_type_array)
 
         if number_of_possible_serial_types == 1:
-
             serial_type = column_serial_type_array[0]
             serial_type_regex = generate_regex_for_simplified_serial_type(serial_type)
             regex += serial_type_regex
 
         elif 1 < number_of_possible_serial_types < 13:
-
             """
 
             The maximum number of possible serial types are in the range of 1 to 12.  Since the case of just
@@ -280,41 +250,30 @@ def generate_signature_regex(signature: list, skip_first_serial_type: bool = Fal
 
             for column_serial_type in column_serial_type_array:
                 if column_serial_type == -1:
-                    blob_regex = generate_regex_for_simplified_serial_type(
-                        column_serial_type
-                    )
+                    blob_regex = generate_regex_for_simplified_serial_type(column_serial_type)
                 elif column_serial_type == -2:
-                    text_regex = generate_regex_for_simplified_serial_type(
-                        column_serial_type
-                    )
+                    text_regex = generate_regex_for_simplified_serial_type(column_serial_type)
                 else:
-                    basic_serial_type_regex += (
-                        generate_regex_for_simplified_serial_type(column_serial_type)
-                    )
+                    basic_serial_type_regex += generate_regex_for_simplified_serial_type(column_serial_type)
 
             if blob_regex or text_regex:
-
                 if basic_serial_type_regex:
                     basic_serial_type_regex = b"[%b]" % basic_serial_type_regex
 
                 if blob_regex and not text_regex:
-
                     if not basic_serial_type_regex:
                         log_message = (
                             "No basic serial type regular expression found when multiple column serial "
                             "types were defined with a blob regular expression of: {} and no text regular "
                             "expression in the signature: {} where the skip first serial type was set to: {}."
                         )
-                        log_message = log_message.format(
-                            blob_regex, signature, skip_first_serial_type
-                        )
+                        log_message = log_message.format(blob_regex, signature, skip_first_serial_type)
                         getLogger(LOGGER_NAME).error(log_message)
                         raise CarvingError(log_message)
 
                     regex += b"(?:%b|%b)" % (basic_serial_type_regex, blob_regex)
 
                 elif not blob_regex and text_regex:
-
                     if not basic_serial_type_regex:
                         log_message = (
                             "No basic serial type regular expression found when multiple column serial "
@@ -322,16 +281,13 @@ def generate_signature_regex(signature: list, skip_first_serial_type: bool = Fal
                             "expression of: {} in the signature: {} where the skip first serial type "
                             "was set to: {}."
                         )
-                        log_message = log_message.format(
-                            text_regex, signature, skip_first_serial_type
-                        )
+                        log_message = log_message.format(text_regex, signature, skip_first_serial_type)
                         getLogger(LOGGER_NAME).error(log_message)
                         raise CarvingError(log_message)
 
                     regex += b"(?:%b|%b)" % (basic_serial_type_regex, text_regex)
 
                 elif blob_regex and text_regex:
-
                     var_length_regex = blob_regex + b"|" + text_regex
                     if basic_serial_type_regex:
                         regex += b"(?:%b|%b)" % (
@@ -347,14 +303,11 @@ def generate_signature_regex(signature: list, skip_first_serial_type: bool = Fal
                         "text column signature types in the signature: {} where the skip first serial type "
                         "was set to: {}."
                     )
-                    log_message = log_message.format(
-                        text_regex, signature, skip_first_serial_type
-                    )
+                    log_message = log_message.format(text_regex, signature, skip_first_serial_type)
                     getLogger(LOGGER_NAME).error(log_message)
                     raise CarvingError(log_message)
 
             else:
-
                 """
 
                 Since a blob or text regex was not found, the signatures must only be basic serial types (which are
@@ -375,7 +328,6 @@ def generate_signature_regex(signature: list, skip_first_serial_type: bool = Fal
                 regex += b"[%b]" % basic_serial_type_regex
 
         else:
-
             log_message = (
                 "Invalid number of columns in the signature: {} to generate a regular expression from "
                 "where the skip first serial type was set to: {}."
@@ -388,57 +340,47 @@ def generate_signature_regex(signature: list, skip_first_serial_type: bool = Fal
 
 
 def get_content_size(serial_type):
-
     # NULL
     if serial_type == 0:
         return 0
 
     # 8-bit twos-complement integer
-    elif serial_type == 1:
+    if serial_type == 1:
         return 1
 
     # Big-endian 16-bit twos-complement integer
-    elif serial_type == 2:
+    if serial_type == 2:
         return 2
 
     # Big-endian 24-bit twos-complement integer
-    elif serial_type == 3:
+    if serial_type == 3:
         return 3
 
     # Big-endian 32-bit twos-complement integer
-    elif serial_type == 4:
+    if serial_type == 4:
         return 4
 
     # Big-endian 48-bit twos-complement integer
-    elif serial_type == 5:
+    if serial_type == 5:
         return 6
 
     # Big-endian 64-bit twos-complement integer
-    elif serial_type == 6:
-        return 8
-
-    # Big-endian IEEE 754-2008 64-bit floating point number
-    elif serial_type == 7:
+    if serial_type == 6 or serial_type == 7:
         return 8
 
     # Integer constant 0 (schema format == 4)
-    elif serial_type == 8:
-        return 0
-
-    # Integer constant 1 (schema format == 4)
-    elif serial_type == 9:
+    if serial_type == 8 or serial_type == 9:
         return 0
 
     # A BLOB that is (N-12)/2 bytes in length
-    elif serial_type >= 12 and serial_type % 2 == 0:
+    if serial_type >= 12 and serial_type % 2 == 0:
         return (serial_type - 12) / 2
 
     # A string in the database encoding and is (N-13)/2 bytes in length.  The null terminator is omitted
-    elif serial_type >= 13 and serial_type % 2 == 1:
+    if serial_type >= 13 and serial_type % 2 == 1:
         return int((serial_type - 13) / 2)
 
-    else:
-        log_message = "Invalid serial type: {}."
-        log_message = log_message.format(serial_type)
-        getLogger(LOGGER_NAME).error(log_message)
-        raise ValueError(log_message)
+    log_message = "Invalid serial type: {}."
+    log_message = log_message.format(serial_type)
+    getLogger(LOGGER_NAME).error(log_message)
+    raise ValueError(log_message)

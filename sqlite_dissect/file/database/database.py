@@ -54,9 +54,7 @@ class Database(Version):
 
         """
 
-        database_file_handle = FileHandle(
-            FILE_TYPE.DATABASE, file_identifier, file_size=file_size
-        )
+        database_file_handle = FileHandle(FILE_TYPE.DATABASE, file_identifier, file_size=file_size)
         super().__init__(
             database_file_handle,
             BASE_VERSION_NUMBER,
@@ -97,27 +95,18 @@ class Database(Version):
 
         # The database header size in pages is not set
         if self.database_header.database_size_in_pages == 0:
-
             log_message = (
-                "Database header for version: {} specifies a database size in pages of 0 for "
-                "sqlite version: {}."
+                "Database header for version: {} specifies a database size in pages of 0 for sqlite version: {}."
             )
-            log_message = log_message.format(
-                self.version_number, self.database_header.sqlite_version_number
-            )
+            log_message = log_message.format(self.version_number, self.database_header.sqlite_version_number)
             self._logger.info(log_message)
 
-            if (
-                self.database_header.sqlite_version_number
-                >= SQLITE_3_7_0_VERSION_NUMBER
-            ):
+            if self.database_header.sqlite_version_number >= SQLITE_3_7_0_VERSION_NUMBER:
                 log_message = (
                     "The database header database size in pages is 0 when the sqlite version: {} is "
                     "greater or equal than 3.7.0 in version: {} and should be set."
                 )
-                log_message = log_message.format(
-                    self.database_header.sqlite_version_number, self.version_number
-                )
+                log_message = log_message.format(self.database_header.sqlite_version_number, self.version_number)
                 self._logger.error(log_message)
                 raise DatabaseParsingError(log_message)
 
@@ -125,11 +114,7 @@ class Database(Version):
             self.database_size_in_pages = self.file_handle.file_size / self.page_size
 
         # The database header size in pages is set and the version valid for number does not equal the change counter
-        elif (
-            self.database_header.version_valid_for_number
-            != self.database_header.file_change_counter
-        ):
-
+        elif self.database_header.version_valid_for_number != self.database_header.file_change_counter:
             """
 
             We now know that the database has been modified by a legacy version and the database size may not
@@ -158,7 +143,6 @@ class Database(Version):
 
         # The database header size in pages is set and the version valid for number does equals the change counter
         else:
-
             """
 
             Check to make sure the calculated size in pages matches the database header database size in pages as
@@ -180,11 +164,8 @@ class Database(Version):
             calculated_size_in_pages = self.file_handle.file_size / self.page_size
 
             if self.database_header.database_size_in_pages != calculated_size_in_pages:
-
                 # Set the database size in pages to the database header size in pages
-                self.database_size_in_pages = (
-                    self.database_header.database_size_in_pages
-                )
+                self.database_size_in_pages = self.database_header.database_size_in_pages
 
                 log_message = (
                     "Database header for version: {} specifies a database size in pages of {} but the "
@@ -201,10 +182,7 @@ class Database(Version):
                 warn(log_message, RuntimeWarning)
 
             else:
-
-                self.database_size_in_pages = (
-                    self.database_header.database_size_in_pages
-                )
+                self.database_size_in_pages = self.database_header.database_size_in_pages
 
         """
 
@@ -216,22 +194,14 @@ class Database(Version):
 
         """
 
-        self.updated_page_numbers = [
-            page_index + 1 for page_index in range(int(self.database_size_in_pages))
-        ]
-        self.page_version_index = dict(
-            map(lambda x: [x, self.version_number], self.updated_page_numbers)
-        )
+        self.updated_page_numbers = [page_index + 1 for page_index in range(int(self.database_size_in_pages))]
+        self.page_version_index = dict(map(lambda x: [x, self.version_number], self.updated_page_numbers))
 
         self._logger.debug(
-            "Updated page numbers initialized as: {} in version: {}.".format(
-                self.updated_page_numbers, self.version_number
-            )
+            f"Updated page numbers initialized as: {self.updated_page_numbers} in version: {self.version_number}."
         )
         self._logger.debug(
-            "Page version index initialized as: {} in version: {}.".format(
-                self.page_version_index, self.version_number
-            )
+            f"Page version index initialized as: {self.page_version_index} in version: {self.version_number}."
         )
 
         """
@@ -264,7 +234,6 @@ class Database(Version):
         observed_freelist_pages = 0
         freelist_trunk_page = self.first_freelist_trunk_page
         while freelist_trunk_page:
-
             # Remove it from the updated b-tree pages
             self.updated_b_tree_page_numbers.remove(freelist_trunk_page.number)
 
@@ -278,15 +247,16 @@ class Database(Version):
         if observed_freelist_pages != self.database_header.number_of_freelist_pages:
             log_message = (
                 "The number of observed freelist pages: {} does not match the number of freelist pages "
-                "specified in the header: {} for version: {}."
+                "specified in the header: {} for version: {}. This may indicate anti-forensic manipulation "
+                "or a circular freelist chain that was broken. Continuing with observed pages."
             )
             log_message = log_message.format(
                 observed_freelist_pages,
                 self.database_header.number_of_freelist_pages,
                 self.version_number,
             )
-            self._logger.error(log_message)
-            raise DatabaseParsingError(log_message)
+            self._logger.warning(log_message)
+            warn(log_message, RuntimeWarning)
 
         """
 
@@ -298,15 +268,12 @@ class Database(Version):
         """
 
         if self.database_header.largest_root_b_tree_page_number:
-            self.pointer_map_pages = create_pointer_map_pages(
-                self, self.database_size_in_pages, self.page_size
-            )
+            self.pointer_map_pages = create_pointer_map_pages(self, self.database_size_in_pages, self.page_size)
         else:
             self.pointer_map_pages = []
 
         self.pointer_map_page_numbers = []
         for pointer_map_page in self.pointer_map_pages:
-
             # Remove it from the updated b-tree pages
             self.updated_b_tree_page_numbers.remove(pointer_map_page.number)
 
@@ -349,22 +316,19 @@ class Database(Version):
         """
 
         if len(self.master_schema.master_schema_entries) == 0:
-            if (
-                self.database_header.schema_format_number != 0
-                or self.database_header.database_text_encoding != 0
-            ):
+            if self.database_header.schema_format_number != 0 or self.database_header.database_text_encoding != 0:
                 log_message = (
                     "No master schema entries found in master schema for version: {} when the database "
                     "schema format number was: {} and the database text encoding was: {} when both should "
-                    "be 0."
+                    "be 0. Some tables may have been skipped due to parsing errors."
                 )
                 log_message = log_message.format(
                     self.version_number,
                     self.database_header.schema_format_number,
                     self.database_header.database_text_encoding,
                 )
-                self._logger.error(log_message)
-                raise DatabaseParsingError(log_message)
+                self._logger.warning(log_message)
+                warn(log_message, RuntimeWarning)
 
         """
 
@@ -405,11 +369,8 @@ class Database(Version):
         raise TypeError(log_message)
 
     def get_page_data(self, page_number, offset=0, number_of_bytes=None):
-
         # Set the number of bytes to the rest of the page if it was not set
-        number_of_bytes = (
-            self.page_size - offset if not number_of_bytes else number_of_bytes
-        )
+        number_of_bytes = self.page_size - offset if not number_of_bytes else number_of_bytes
 
         if offset >= self.page_size:
             log_message = "Requested offset: {} is >= the page size: {} for page: {}."
@@ -419,8 +380,7 @@ class Database(Version):
 
         if offset + number_of_bytes > self.page_size:
             log_message = (
-                "Requested length of data: {} at offset {} to {} is greater than the page "
-                "size: {} for page: {}."
+                "Requested length of data: {} at offset {} to {} is greater than the page size: {} for page: {}."
             )
             log_message = log_message.format(
                 number_of_bytes,
@@ -437,12 +397,9 @@ class Database(Version):
         return self.file_handle.read_data(page_offset + offset, number_of_bytes)
 
     def get_page_offset(self, page_number):
-
         if page_number < 1 or page_number > self.database_size_in_pages:
             log_message = "Invalid page number: {} for version: {} with database size in pages: {}."
-            log_message = log_message.format(
-                page_number, self.version_number, self.database_size_in_pages
-            )
+            log_message = log_message.format(page_number, self.version_number, self.database_size_in_pages)
             self._logger.error(log_message)
             raise ValueError(log_message)
 
