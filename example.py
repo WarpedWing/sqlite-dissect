@@ -84,19 +84,13 @@ Note:  Currently only the csv export_type is supported in this example.  The csv
 """
 
 if (export_directory and not export_type) or (not export_directory and export_type):
-    print(
-        "The export directory (-e) and export type (-t) both need to be defined if either one is specified."
-    )
+    print("The export directory (-e) and export type (-t) both need to be defined if either one is specified.")
     print(f"Export types are: {[export_type for export_type in EXPORT_TYPES]}.")
     exit(1)
 
 if export_type and export_type.upper() not in EXPORT_TYPES:
     print(f"Invalid export type: {export_type}.")
-    print(
-        "Export types are: {}.".format(
-            ",".join([export_type.lower() for export_type in EXPORT_TYPES])
-        )
-    )
+    print("Export types are: {}.".format(",".join([export_type.lower() for export_type in EXPORT_TYPES])))
     exit(1)
 
 if not file_name:
@@ -170,9 +164,7 @@ Print Unallocated Non-Zero Space from the Database File.
 """
 
 unallocated_non_zero_space = stringify_unallocated_space(database_file, padding, False)
-print(
-    f"Unallocated Non-Zero Space from the Database File:\n{unallocated_non_zero_space}\n"
-)
+print(f"Unallocated Non-Zero Space from the Database File:\n{unallocated_non_zero_space}\n")
 
 """
 
@@ -198,11 +190,7 @@ for version_number, version in version_history.versions.iteritems():
         if master_schema_entries:
             print(f"Version {version_number} Master Schema Entries:")
             for master_schema_entry in master_schema_entries:
-                string = (
-                    padding
-                    + "Master Schema Entry: Root Page Number: {} Type: {} Name: {} "
-                    "Table Name: {} SQL: {}."
-                )
+                string = padding + "Master Schema Entry: Root Page Number: {} Type: {} Name: {} Table Name: {} SQL: {}."
                 print(
                     string.format(
                         master_schema_entry.root_page_number,
@@ -215,9 +203,7 @@ for version_number, version in version_history.versions.iteritems():
 
 print("Version History:\n")
 for version_number, version in version_history.versions.iteritems():
-    print(
-        f"Version: {version_number} has updated page numbers: {version.updated_page_numbers}."
-    )
+    print(f"Version: {version_number} has updated page numbers: {version.updated_page_numbers}.")
     print(f"Page Information:\n{stringify_page_information(version, padding)}\n")
 
 last_version = version_history.number_of_versions - 1
@@ -226,24 +212,16 @@ print(
 )
 print(f"Page Information:\n{stringify_page_information(last_version, padding)}\n")
 
-print(
-    f"Version History of Master Schemas:\n{stringify_master_schema_versions(version_history)}\n"
-)
+print(f"Version History of Master Schemas:\n{stringify_master_schema_versions(version_history)}\n")
 
 print("Master Schema B-Trees (Index and Table) Version Histories:")
 for master_schema_entry in database_file.master_schema.master_schema_entries:
     if (
-        master_schema_entry.row_type
-        in [MASTER_SCHEMA_ROW_TYPE.INDEX, MASTER_SCHEMA_ROW_TYPE.TABLE]
+        master_schema_entry.row_type in [MASTER_SCHEMA_ROW_TYPE.INDEX, MASTER_SCHEMA_ROW_TYPE.TABLE]
         and not isinstance(master_schema_entry, VirtualTableRow)
-        and not (
-            isinstance(master_schema_entry, OrdinaryTableRow)
-            and master_schema_entry.without_row_id
-        )
+        and not (isinstance(master_schema_entry, OrdinaryTableRow) and master_schema_entry.without_row_id)
     ):
-        version_history_parser = VersionHistoryParser(
-            version_history, master_schema_entry
-        )
+        version_history_parser = VersionHistoryParser(version_history, master_schema_entry)
         page_type = version_history_parser.page_type
         string = "Master schema entry: {} type: {} on page type: {}:"
         string = string.format(
@@ -295,7 +273,6 @@ for master_schema_entry in database_file.master_schema.master_schema_entries:
 
 signatures = {}
 for master_schema_entry in database_file.master_schema.master_schema_entries:
-
     """
 
     Due to current implementation limitations we are restricting signature generation to table row types.
@@ -305,11 +282,7 @@ for master_schema_entry in database_file.master_schema.master_schema_entries:
     if master_schema_entry.row_type == MASTER_SCHEMA_ROW_TYPE.TABLE:
         signature = Signature(version_history, master_schema_entry)
         signatures[master_schema_entry.name] = signature
-        print(
-            "Signature:\n{}\n".format(
-                signature.stringify(padding + "\t", False, False, False)
-            )
-        )
+        print("Signature:\n{}\n".format(signature.stringify(padding + "\t", False, False, False)))
     else:
         string = (
             "No signature will be generated for master schema entry type: {} with name: {} on "
@@ -328,7 +301,6 @@ version = version_history.versions[BASE_VERSION_NUMBER]
 
 carved_records = {}
 for master_schema_entry in database_file.master_schema.master_schema_entries:
-
     """
 
     Due to current implementation limitations we are restricting carving to table row types.
@@ -344,10 +316,7 @@ for master_schema_entry in database_file.master_schema.master_schema_entries:
         and not isinstance(master_schema_entry, VirtualTableRow)
         and not master_schema_entry.without_row_id
     ):
-
-        b_tree_pages = get_pages_from_b_tree_page(
-            version.get_b_tree_root_page(master_schema_entry.root_page_number)
-        )
+        b_tree_pages = get_pages_from_b_tree_page(version.get_b_tree_root_page(master_schema_entry.root_page_number))
         b_tree_page_numbers = [b_tree_page.number for b_tree_page in b_tree_pages]
 
         string = "Carving Table Entry: Name: {} root page: {} on page numbers: {}"
@@ -400,15 +369,10 @@ print("\n")
 
 print("Carved Entries:\n")
 for master_schema_entry_name, carved_cells in carved_records.iteritems():
-
     print(f"Table Master Schema Entry Name {master_schema_entry_name}:")
 
     carved_freeblock_records_total = len(
-        [
-            carved_cell
-            for carved_cell in carved_cells
-            if carved_cell.location == CELL_LOCATION.FREEBLOCK
-        ]
+        [carved_cell for carved_cell in carved_cells if carved_cell.location == CELL_LOCATION.FREEBLOCK]
     )
 
     print(f"Recovered {carved_freeblock_records_total} entries from freeblocks:")
@@ -417,8 +381,7 @@ for master_schema_entry_name, carved_cells in carved_records.iteritems():
         if carved_cell.location == CELL_LOCATION.FREEBLOCK:
             payload = carved_cell.payload
             cell_record_column_values = [
-                str(record_column.value) if record_column.value else "NULL"
-                for record_column in payload.record_columns
+                str(record_column.value) if record_column.value else "NULL" for record_column in payload.record_columns
             ]
             string = "{}: {} Index: ({}, {}, {}, {}): ({})"
             string = string.format(
@@ -433,22 +396,15 @@ for master_schema_entry_name, carved_cells in carved_records.iteritems():
             print(string)
 
     carved_unallocated_space_records_total = len(
-        [
-            carved_cell
-            for carved_cell in carved_cells
-            if carved_cell.location == CELL_LOCATION.UNALLOCATED_SPACE
-        ]
+        [carved_cell for carved_cell in carved_cells if carved_cell.location == CELL_LOCATION.UNALLOCATED_SPACE]
     )
-    print(
-        f"Recovered {carved_unallocated_space_records_total} entries from unallocated space:"
-    )
+    print(f"Recovered {carved_unallocated_space_records_total} entries from unallocated space:")
 
     for carved_cell in carved_cells:
         if carved_cell.location == CELL_LOCATION.UNALLOCATED_SPACE:
             payload = carved_cell.payload
             cell_record_column_values = [
-                str(record_column.value) if record_column.value else "NULL"
-                for record_column in payload.record_columns
+                str(record_column.value) if record_column.value else "NULL" for record_column in payload.record_columns
             ]
             string = "{}: {} Index: ({}, {}, {}, {}): ({})"
             string = string.format(
@@ -471,7 +427,6 @@ for master_schema_entry in database_file.master_schema.master_schema_entries:
         MASTER_SCHEMA_ROW_TYPE.INDEX,
         MASTER_SCHEMA_ROW_TYPE.TABLE,
     ]:
-
         # We only have signatures of the tables (not indexes)
         signature = (
             signatures[master_schema_entry.name]
@@ -479,9 +434,7 @@ for master_schema_entry in database_file.master_schema.master_schema_entries:
             else None
         )
 
-        version_history_parser = VersionHistoryParser(
-            version_history, master_schema_entry, None, None, signature
-        )
+        version_history_parser = VersionHistoryParser(version_history, master_schema_entry, None, None, signature)
         page_type = version_history_parser.page_type
         string = "Master schema entry: {} type: {} on page type: {}:"
         string = string.format(
@@ -542,7 +495,6 @@ if export_type and export_type.upper() == EXPORT_TYPES.CSV:
             MASTER_SCHEMA_ROW_TYPE.INDEX,
             MASTER_SCHEMA_ROW_TYPE.TABLE,
         ]:
-
             # We only have signatures of the tables (not indexes)
             signature = (
                 signatures[master_schema_entry.name]
@@ -592,11 +544,7 @@ print("Example interface usage:\n")
 database = create_database(file_name)
 
 # Create the write ahead log
-write_ahead_log = (
-    create_write_ahead_log(file_name + WAL_FILE_POSTFIX)
-    if exists(file_name + WAL_FILE_POSTFIX)
-    else None
-)
+write_ahead_log = create_write_ahead_log(file_name + WAL_FILE_POSTFIX) if exists(file_name + WAL_FILE_POSTFIX) else None
 
 # Create the version history
 version_history = create_version_history(database, write_ahead_log)
@@ -635,9 +583,7 @@ for table_name in table_names:
 for table_name in table_names:
     if table_name in signatures:
         carved_cells = carve_table(table_name, signatures[table_name], database)
-        print(
-            f"Found {len(carved_cells)} carved cells for table: {table_name} in the database file."
-        )
+        print(f"Found {len(carved_cells)} carved cells for table: {table_name} in the database file.")
 print("\n")
 
 # Combine names for index and tables (they are unique) and get the version history iterator for each
@@ -646,9 +592,7 @@ names.extend(table_names)
 names.extend(index_names)
 for name in names:
     signature = signatures[name] if name in signatures else None
-    version_history_iterator = get_version_history_iterator(
-        name, version_history, signature
-    )
+    version_history_iterator = get_version_history_iterator(name, version_history, signature)
     for commit in version_history_iterator:
         string = f"For: {name} commit: {commit.updated} for version: {commit.version_number}."
         if commit.updated:
@@ -658,7 +602,6 @@ print("\n")
 
 # Check to make sure exporting variables were setup correctly for csv
 if export_type and export_type.upper() == EXPORT_TYPES.CSV:
-
     # Create two directories for the two types csv files can be exported through the interface
     export_version_directory = export_directory + sep + "csv_version"
     if not exists(export_version_directory):
@@ -670,23 +613,16 @@ if export_type and export_type.upper() == EXPORT_TYPES.CSV:
     # Iterate through all index and table names and export their version history to a csv file (one at a time)
     for name in names:
         print(f"Exporting {name} to {export_version_directory} as {export_type}.")
-        export_table_or_index_version_history_to_csv(
-            export_version_directory, version_history, name, None, False
-        )
+        export_table_or_index_version_history_to_csv(export_version_directory, version_history, name, None, False)
     print("\n")
 
     # Export all index and table histories to csv files while supplying signatures to carve tables and carving freelists
-    print(
-        f"Exporting history to {export_version_history_directory} with carvings as {export_type}."
-    )
-    export_version_history_to_csv(
-        export_version_history_directory, version_history, signatures.values(), True
-    )
+    print(f"Exporting history to {export_version_history_directory} with carvings as {export_type}.")
+    export_version_history_to_csv(export_version_history_directory, version_history, signatures.values(), True)
     print("\n")
 
 # Check to make sure exporting variable were setup correctly for SQLite
 if export_type and export_type.upper() == EXPORT_TYPES.SQLITE:
-
     # Create two directories for the two types SQLite files can be exported through the interface
     export_version_directory = export_directory + sep + "sqlite_version"
     if not exists(export_version_directory):
@@ -702,12 +638,8 @@ if export_type and export_type.upper() == EXPORT_TYPES.SQLITE:
     # Iterate through all index and table names and export their version history to a csv file (one at a time)
     for name in names:
         fixed_master_schema_name = sub(" ", "_", name)
-        master_schema_entry_file_name = (
-            sqlite_base_file_name + "-" + fixed_master_schema_name + sqlite_file_postfix
-        )
-        print(
-            f"Exporting {name} to {master_schema_entry_file_name} in {export_version_directory} as {export_type}."
-        )
+        master_schema_entry_file_name = sqlite_base_file_name + "-" + fixed_master_schema_name + sqlite_file_postfix
+        print(f"Exporting {name} to {master_schema_entry_file_name} in {export_version_directory} as {export_type}.")
         export_table_or_index_version_history_to_sqlite(
             export_version_directory,
             master_schema_entry_file_name,

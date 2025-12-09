@@ -264,7 +264,9 @@ class MasterSchema:
 
                         self.master_schema_entries.append(table_row)
                         if table_row.table_name in master_schema_tables:
-                            log_message = "Master schema table row with table name: {} was already specified in table rows."
+                            log_message = (
+                                "Master schema table row with table name: {} was already specified in table rows."
+                            )
                             log_message = log_message.format(table_row.table_name)
                             logger.error(log_message)
                             raise MasterSchemaParsingError(log_message)

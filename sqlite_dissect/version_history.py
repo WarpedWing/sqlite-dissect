@@ -648,11 +648,13 @@ class VersionHistoryParser(VersionParser):
 
                     if self._page_type == PAGE_TYPE.B_TREE_TABLE_LEAF:
                         # Filter cells to only those with row_id (anti-forensics may mix cell types)
-                        added_cells_with_row_id = {k: v for k, v in added_cells.items() if hasattr(v, 'row_id')}
-                        deleted_cells_with_row_id = {k: v for k, v in deleted_cells.items() if hasattr(v, 'row_id')}
+                        added_cells_with_row_id = {k: v for k, v in added_cells.items() if hasattr(v, "row_id")}
+                        deleted_cells_with_row_id = {k: v for k, v in deleted_cells.items() if hasattr(v, "row_id")}
 
                         # Organize a added cells dictionary keyed off of row id
-                        added_cells_by_row_id = {added_cell.row_id: added_cell for added_cell in added_cells_with_row_id.values()}
+                        added_cells_by_row_id = {
+                            added_cell.row_id: added_cell for added_cell in added_cells_with_row_id.values()
+                        }
 
                         # Get the row ids of the cells that were updated by checking against the deleted cells
                         updated_cell_row_ids = [
