@@ -359,7 +359,7 @@ class FreelistTrunkPage(Page):
             if end_offset > len(page):
                 log_message = (
                     "Freelist trunk page: {} claims {} leaf page pointers but only has data for {}. "
-                    "This may indicate anti-forensic manipulation. Stopping leaf page parsing."
+                    "Stopping leaf page parsing."
                 )
                 log_message = log_message.format(self.number, self.number_of_leaf_page_pointers, index)
                 self._logger.warning(log_message)
@@ -378,8 +378,7 @@ class FreelistTrunkPage(Page):
             # Validate freelist leaf page number is within valid range
             if freelist_leaf_page_number not in self._version_interface.page_version_index:
                 log_message = (
-                    "Invalid freelist leaf page number: {} in freelist trunk page: {}. "
-                    "This may indicate anti-forensic manipulation. Skipping this leaf page."
+                    "Invalid freelist leaf page number: {} in freelist trunk page: {}. Skipping this leaf page."
                 )
                 log_message = log_message.format(freelist_leaf_page_number, self.number)
                 self._logger.warning(log_message)
@@ -397,7 +396,7 @@ class FreelistTrunkPage(Page):
             log_message = (
                 "In freelist trunk page: {} with page version: {} in version: {} found a different amount "
                 "of freelist leaf page numbers: {} than freelist leaf page pointers: {} found on the page. "
-                "This may indicate anti-forensic manipulation or skipped invalid page numbers. Continuing."
+                "Continuing."
             )
             log_message = log_message.format(
                 self.number,
@@ -425,8 +424,7 @@ class FreelistTrunkPage(Page):
             # Validate next freelist trunk page number is within valid range
             if self.next_freelist_trunk_page_number not in self._version_interface.page_version_index:
                 log_message = (
-                    "Invalid next freelist trunk page number: {} in freelist trunk page: {}. "
-                    "This may indicate anti-forensic manipulation. Breaking freelist chain."
+                    "Invalid next freelist trunk page number: {} in freelist trunk page: {}. Breaking freelist chain."
                 )
                 log_message = log_message.format(self.next_freelist_trunk_page_number, self.number)
                 self._logger.warning(log_message)
@@ -460,7 +458,7 @@ class FreelistTrunkPage(Page):
                 if self.next_freelist_trunk_page_number in self._visited_pages:
                     log_message = (
                         "Circular freelist trunk chain detected in page: {} pointing to already visited page: {}. "
-                        "This may indicate anti-forensic manipulation. Breaking chain."
+                        "Breaking chain."
                     )
                     log_message = log_message.format(self.number, self.next_freelist_trunk_page_number)
                     self._logger.warning(log_message)
@@ -938,7 +936,7 @@ class BTreePage(Page):
                 if next_freeblock_offset in visited_offsets:
                     log_message = (
                         "Circular freeblock chain detected at offset {} for page {} "
-                        "in version {}. This may indicate anti-forensic manipulation. "
+                        "in version {}. "
                         "Breaking freeblock chain."
                     )
                     log_message = log_message.format(next_freeblock_offset, self.number, self.version_number)

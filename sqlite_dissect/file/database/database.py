@@ -247,8 +247,8 @@ class Database(Version):
         if observed_freelist_pages != self.database_header.number_of_freelist_pages:
             log_message = (
                 "The number of observed freelist pages: {} does not match the number of freelist pages "
-                "specified in the header: {} for version: {}. This may indicate anti-forensic manipulation "
-                "or a circular freelist chain that was broken. Continuing with observed pages."
+                "specified in the header: {} for version: {}. This may indicate "
+                "a circular freelist chain that was broken. Continuing with observed pages."
             )
             log_message = log_message.format(
                 observed_freelist_pages,

@@ -594,7 +594,7 @@ class VersionHistoryParser(VersionParser):
                             "The total aggregated leaf cells: {} does not match the length of the "
                             "cells parsed: {} for version: {} of page type: {} iterating between versions "
                             "{} and {} over b-tree page numbers: {} with updated b-tree pages: {}. "
-                            "This may indicate anti-forensic manipulation. Continuing with parsed cells."
+                            "Continuing with parsed cells."
                         )
                         log_message = log_message.format(
                             total,

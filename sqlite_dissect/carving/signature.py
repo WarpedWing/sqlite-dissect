@@ -306,7 +306,7 @@ class Signature(VersionParser):
                                 table_row_signature = TableRowSignature(column_definitions, record)
                                 self.table_row_signatures[record.serial_type_signature] = table_row_signature
                             except (ValueError, IndexError) as e:
-                                # Skip malformed records (e.g., anti-forensic manipulation)
+                                # Skip malformed records
                                 logger.warning(f"Skipping malformed record during signature generation: {e}")
                                 continue
 
@@ -343,7 +343,7 @@ class Signature(VersionParser):
                 log_message = (
                     "The total table row signature count: {} does not match the number of unique "
                     "records: {} for master schema entry row type: {} with root page number: {} name: {} "
-                    "table name: {}. Some records may have been skipped due to anti-forensic manipulation."
+                    "table name: {}. Some records may have been skipped."
                 )
                 log_message = log_message.format(
                     total_table_row_signature_count,
@@ -507,7 +507,7 @@ class Signature(VersionParser):
                     log_message = (
                         "The total records: {} and unique records: {} are both not 0 as expected for "
                         "master schema entry row type: {} with root page number: {} name: {} table "
-                        "name: {}. All records may have been skipped due to anti-forensic manipulation."
+                        "name: {}. All records may have been skipped."
                     )
                     log_message = log_message.format(
                         self.total_records,
@@ -548,7 +548,7 @@ class Signature(VersionParser):
                 log_message = (
                     "The schema column signatures length: {} is not equal to the table column signatures "
                     "length: {} for master schema entry row type: {} with root page number: {} name: {} "
-                    "table name: {}. This may indicate anti-forensic manipulation. Continuing with max column count."
+                    "table name: {}. Continuing with max column count."
                 )
                 log_message = log_message.format(
                     schema_column_signatures_length,
