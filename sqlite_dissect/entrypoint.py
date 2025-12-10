@@ -430,14 +430,13 @@ def main(arguments, sqlite_file_path: str, export_sub_paths=False):
                 except RecursionError:
                     log_message = (
                         f"RecursionError while generating signature for table: {master_schema_entry.name}. "
-                        f"This may indicate circular B-tree pointers (anti-forensic manipulation). Skipping signature."
+                        f"This may indicate circular B-tree pointers. Skipping signature."
                     )
                     logger.warning(log_message)
                     warn(log_message, RuntimeWarning)
                 except Exception as e:
                     log_message = (
-                        f"Error generating signature for table: {master_schema_entry.name}: {e}. "
-                        f"This may indicate anti-forensic manipulation. Skipping signature."
+                        f"Error generating signature for table: {master_schema_entry.name}: {e}. Skipping signature."
                     )
                     logger.warning(log_message)
                     warn(log_message, RuntimeWarning)
